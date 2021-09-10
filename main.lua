@@ -60,13 +60,26 @@ set_callback(function()
         players[1].flags = set_flag(players[1].flags, 4)
         players[1].flags = set_flag(players[1].flags, 6)
       end
+      local to_uid = players[1].linked_companion_child
+      local to_ent = get_entity(to_uid)
+      local to_stun_timer = to_ent.stun_timer
+      local to_falling_timer = to_ent.falling_timer
+      local to_item = to_ent.holding_uid
+      local prev_x, prev_y, prev_l = get_position(players[1].uid)
+      local prev_vx, prev_vy = get_velocity(players[1].uid)
+      local to_x, to_y, to_l = get_position(to_uid)
+      local to_vx, to_vy = get_velocity(to_uid)
+      move_entity(to_item, to_x, to_y, 0, 0)
+      move_entity(to_uid, dx, dy+1, 0, 0)
+      spawn(ENT_TYPE.ITEM_SKULLDROPTRAP_SKULL, dx, dy+1, to_ent.layer, 0, 0)
 
-      local to_ent = get_entity(players[1].linked_companion_child)
-      actual_texture = get_entity(players[1].linked_companion_child):get_texture()
+      actual_texture = get_entity(to_uid):get_texture()
+      to_ent:set_texture(players[1]:get_texture())
       messpect(actual_texture)
       players[1]:set_texture(actual_texture)
       players[1].flags = clr_flag(players[1].flags, 29)
       players[1].health = to_ent.health
+      to_ent.health = 1
       
       players[1].falling_timer = 0
       drop(players[1].uid, players[1].holding_uid)
@@ -81,6 +94,7 @@ set_callback(function()
         players[1]:stun(2)
         set_timeout(function()
           players[1]:stun(0)
+          kill_entity(to_uid) -- if the player got crushed, then no need to preserve the corpse
         end, 1)
         wait = 2
       else
@@ -88,28 +102,25 @@ set_callback(function()
         messpect(false)
       end
       set_timeout(function()
-        local to_x, to_y, to_l = get_position(players[1].linked_companion_child)
-        move_entity(to_ent.holding_uid, to_x, to_y, 0, 0)
         players[1]:give_powerup(ENT_TYPE.ITEM_POWERUP_ANKH)
         if test_flag(players[1].flags, 4) then
           players[1].color.a = 1
           players[1].flags = clr_flag(players[1].flags, 4)
           players[1].flags = clr_flag(players[1].flags, 6)
         end
-        if to_ent.stun_timer > 0 then
+        if to_stun_timer > 0 then
           messpect(true)
-          players[1]:stun(to_ent.stun_timer)
+          players[1]:stun(to_stun_timer)
         end
         if players[1].layer ~= to_l then
           players[1]:set_layer(to_l)
         end
-      	move_entity(players[1].uid, to_x, to_y, to_ent.velocityx, to_ent.velocityy)
-        players[1].falling_timer = to_ent.falling_timer
+      	move_entity(players[1].uid, to_x, to_y, to_vx, to_vy)
+        players[1].falling_timer = to_falling_timer
 	      state.camera.focused_entity_uid = players[1].uid
-	      pick_up(players[1].uid, to_ent.holding_uid)
+	      pick_up(players[1].uid, to_item)
         
-        move_entity(players[1].linked_companion_child, 10, 0, 0, 0)
-        kill_entity(players[1].linked_companion_child) --swap characters instead of killing maybe
+        move_entity(to_uid, prev_x, prev_y, prev_vx, prev_vy)
       end, wait)
     end
   end
