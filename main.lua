@@ -3,7 +3,6 @@ meta.version = "1.0"
 meta.description = ""
 meta.author = "Estebanfer"
 
-local all_chars = {}
 local all_chars_names = {"CHAR_ANA_SPELUNKY",
 "CHAR_MARGARET_TUNNEL",
 "CHAR_COLIN_NORTHWARD",
@@ -27,11 +26,6 @@ local all_chars_names = {"CHAR_ANA_SPELUNKY",
 "CHAR_HIREDHAND",
 "CHAR_EGGPLANT_CHILD"}
 
-for i = ENT_TYPE.CHAR_ANA_SPELUNKY, ENT_TYPE.CHAR_CLASSIC_GUY do
-  if #get_entities_by_type(i) == 0 then
-    all_chars[#all_chars+1] = i
-  end
-end
 local chars = {}
 local actual_texture
 local start = true
@@ -56,13 +50,19 @@ set_callback(function()
   chars = {}
   actual_texture = nil
   start = true
+  messpect("start")
   if options.c_one_char then
-    for i = 1, #all_chars do
+    for i = 1, 20 do --20 is the num of chars types (not including hh and chid)
       chars[i] = options.d_char_type+193 + (options.d_char_type > 20 and 1 or 0) --there's a gap between playable chars and hh and child
     end
   else
-    chars = all_chars
+    for i = ENT_TYPE.CHAR_ANA_SPELUNKY, ENT_TYPE.CHAR_CLASSIC_GUY do
+      if #get_entities_by_type(i) == 0 then
+        chars[#chars+1] = i
+      end
+    end
   end
+  messpect("chars:", chars, "all", all_chars)
 end, ON.START)
 
 set_callback(function()
@@ -71,6 +71,7 @@ set_callback(function()
   end
   local px, py, pl = get_position(players[1].uid) --change +1 with +#players when co-op compatible
   local plays = get_entities_at(0, MASK.PLAYER, px, py, pl, 3)
+  messpect(options.a_start_spawns-#plays+1, 8-#plays+1, options.b_max_new_spawns)
   for i = 1, (start and options.a_start_spawns-#plays+1 or math.min(8-#plays+1, options.b_max_new_spawns)) do --solve same chars spawning twice or more
       if #chars == 0 then break end
       local ch_num = math.random(1, #chars)
