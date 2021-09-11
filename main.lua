@@ -1,5 +1,5 @@
 meta.name = "All Chars"
-meta.version = "1.0"
+meta.version = "1.0a"
 meta.description = ""
 meta.author = "Estebanfer"
 
