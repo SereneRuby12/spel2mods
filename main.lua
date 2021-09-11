@@ -183,7 +183,7 @@ set_callback(function()
   end
 end, ON.GUIFRAME)
 
-register_option_int("a_start_spawns", "", "Characters spawned at start", 8, 0, 8)
-register_option_int("b_max_new_spawns", " ", "Max amount of new characters spawned at new level", 8, 0, 8)
-register_option_bool("c_one_char", "  ", "Only one char type", false)
-register_option_combo("d_char_type", "   ", "Char type to spawn (if prev option is true)", table.concat(all_chars_names, '\0')..'\0\0')
+register_option_int("a_start_spawns", "Num of characters spawned at start", "", 8, 0, 8)
+register_option_int("b_max_new_spawns", "Max new level chars", "Max amount of new characters spawned at new level", 8, 0, 8)
+register_option_bool("c_one_char", "Only one char type?", "", false)
+register_option_combo("d_char_type", "", "Char type to spawn (only if previous option is activated)", table.concat(all_chars_names, '\0')..'\0\0')
