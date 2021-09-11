@@ -50,7 +50,6 @@ set_callback(function()
   chars = {}
   actual_texture = nil
   start = true
-  messpect("start")
   if options.c_one_char then
     for i = 1, 20 do --20 is the num of chars types (not including hh and chid)
       chars[i] = options.d_char_type+193 + (options.d_char_type > 20 and 1 or 0) --there's a gap between playable chars and hh and child
@@ -62,7 +61,6 @@ set_callback(function()
       end
     end
   end
-  messpect("chars:", chars, "all", all_chars)
 end, ON.START)
 
 set_callback(function()
@@ -71,7 +69,6 @@ set_callback(function()
   end
   local px, py, pl = get_position(players[1].uid) --change +1 with +#players when co-op compatible
   local plays = get_entities_at(0, MASK.PLAYER, px, py, pl, 3)
-  messpect(options.a_start_spawns-#plays+1, 8-#plays+1, options.b_max_new_spawns)
   for i = 1, (start and options.a_start_spawns-#plays+1 or math.min(8-#plays+1, options.b_max_new_spawns)) do --solve same chars spawning twice or more
       if #chars == 0 then break end
       local ch_num = math.random(1, #chars)
