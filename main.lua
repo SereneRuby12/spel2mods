@@ -1,5 +1,37 @@
 meta.name = "All Chars"
+meta.version = "1.0"
+meta.description = ""
+meta.author = "Estebanfer"
 
+local all_chars = {}
+local all_chars_names = {"CHAR_ANA_SPELUNKY",
+"CHAR_MARGARET_TUNNEL",
+"CHAR_COLIN_NORTHWARD",
+"CHAR_ROFFY_D_SLOTH",
+"CHAR_BANDA",
+"CHAR_GREEN_GIRL",
+"CHAR_AMAZON",
+"CHAR_LISE_SYSTEM",
+"CHAR_COCO_VON_DIAMONDS",
+"CHAR_MANFRED_TUNNEL",
+"CHAR_OTAKU",
+"CHAR_TINA_FLAN",
+"CHAR_VALERIE_CRUMP",
+"CHAR_AU",
+"CHAR_DEMI_VON_DIAMONDS",
+"CHAR_PILOT",
+"CHAR_PRINCESS_AIRYN",
+"CHAR_DIRK_YAMAOKA",
+"CHAR_GUY_SPELUNKY",
+"CHAR_CLASSIC_GUY",
+"CHAR_HIREDHAND",
+"CHAR_EGGPLANT_CHILD"}
+
+for i = ENT_TYPE.CHAR_ANA_SPELUNKY, ENT_TYPE.CHAR_CLASSIC_GUY do
+  if #get_entities_by_type(i) == 0 then
+    all_chars[#all_chars+1] = i
+  end
+end
 local chars = {}
 local actual_texture
 local start = true
@@ -24,10 +56,12 @@ set_callback(function()
   chars = {}
   actual_texture = nil
   start = true
-  for i = ENT_TYPE.CHAR_ANA_SPELUNKY, ENT_TYPE.CHAR_CLASSIC_GUY do
-    if #get_entities_by_type(i) == 0 then
-      chars[#chars+1] = i
+  if options.c_one_char then
+    for i = 1, #all_chars do
+      chars[i] = options.d_char_type+193 + (options.d_char_type > 20 and 1 or 0) --there's a gap between playable chars and hh and child
     end
+  else
+    chars = all_chars
   end
 end, ON.START)
 
@@ -149,5 +183,7 @@ set_callback(function()
   end
 end, ON.GUIFRAME)
 
-register_option_int("a_start_spawns", " ", "Characters spawned at start", 8, 0, 8)
-register_option_int("b_max_new_spawns", "", "Max amount of new characters spawned at new level", 8, 0, 8)
+register_option_int("a_start_spawns", "", "Characters spawned at start", 8, 0, 8)
+register_option_int("b_max_new_spawns", " ", "Max amount of new characters spawned at new level", 8, 0, 8)
+register_option_bool("c_one_char", "  ", "Only one char type", false)
+register_option_combo("d_char_type", "   ", "Char type to spawn (if prev option is true)", table.concat(all_chars_names, '\0')..'\0\0')
