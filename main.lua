@@ -69,6 +69,8 @@ set_callback(function()
       local prev_vx, prev_vy = get_velocity(players[1].uid)
       local to_x, to_y, to_l = get_position(to_uid)
       local to_vx, to_vy = get_velocity(to_uid)
+      local to_poison = to_ent:is_poisoned()
+      local to_cursed = test_flag(to_ent.more_flags, 15)
       move_entity(to_item, to_x, to_y, 0, 0)
       move_entity(to_uid, dx, dy+1, 0, 0)
       spawn(ENT_TYPE.ITEM_SKULLDROPTRAP_SKULL, dx, dy+1, to_ent.layer, 0, 0)
@@ -117,6 +119,14 @@ set_callback(function()
         end
       	move_entity(players[1].uid, to_x, to_y, to_vx, to_vy)
         players[1].falling_timer = to_falling_timer
+        if to_poison then
+          players[1]:poison(1800)
+        else
+          players[1]:poison(-1)
+        end
+        if to_cursed then
+          players[1]:set_cursed(true)
+        end
 	      state.camera.focused_entity_uid = players[1].uid
 	      pick_up(players[1].uid, to_item)
         
