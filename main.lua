@@ -2,6 +2,7 @@ meta.name = "All Chars"
 
 local chars = {}
 local actual_texture
+local start = true
 
 --[[local function spawn_coffin_char(x,y,layer, item)
     local uid = spawn_entity(ENT_TYPE.ITEM_COFFIN, x, y, layer, 0, 0)
@@ -22,6 +23,7 @@ end
 set_callback(function()
   chars = {}
   actual_texture = nil
+  start = true
   for i = ENT_TYPE.CHAR_ANA_SPELUNKY, ENT_TYPE.CHAR_CLASSIC_GUY do
     if #get_entities_by_type(i) == 0 then
       chars[#chars+1] = i
@@ -33,9 +35,9 @@ set_callback(function()
   if actual_texture then
     players[1]:set_texture(actual_texture)
   end
-  local plays = get_entities_by_mask(MASK.PLAYER)
-  local px, py, pl = get_position(players[1].uid)
-  for i = 1, 8-#plays+1 do --solve same chars spawning twice or more
+  local px, py, pl = get_position(players[1].uid) --change +1 with +#players when co-op compatible
+  local plays = get_entities_at(0, MASK.PLAYER, px, py, pl, 3)
+  for i = 1, (start and options.a_start_spawns-#plays+1 or math.min(8-#plays+1, options.b_max_new_spawns)) do --solve same chars spawning twice or more
       if #chars == 0 then break end
       local ch_num = math.random(1, #chars)
       spawn_coffin_char(px, py, pl, chars[ch_num])
@@ -43,6 +45,7 @@ set_callback(function()
   end
   local plays = get_entities_by_mask(MASK.PLAYER)
   players[1]:give_powerup(ENT_TYPE.ITEM_POWERUP_ANKH)
+  start = false
 end, ON.LEVEL)
 
 set_callback(function()
@@ -73,15 +76,15 @@ set_callback(function()
       local to_cursed = test_flag(to_ent.more_flags, 15)
       move_entity(to_item, to_x, to_y, 0, 0)
       move_entity(to_uid, dx, dy+1, 0, 0)
-      spawn(ENT_TYPE.ITEM_SKULLDROPTRAP_SKULL, dx, dy+1, to_ent.layer, 0, 0)
+      spawn(ENT_TYPE.ITEM_LASERTRAP_SHOT, dx, dy+1, to_ent.layer, 0, 0)
 
       actual_texture = get_entity(to_uid):get_texture()
       to_ent:set_texture(players[1]:get_texture())
-      messpect(actual_texture)
       players[1]:set_texture(actual_texture)
       players[1].flags = clr_flag(players[1].flags, 29)
       players[1].health = to_ent.health
       to_ent.health = 1
+      to_ent.invincibility_frames_timer = 1
       
       players[1].falling_timer = 0
       drop(players[1].uid, players[1].holding_uid)
@@ -101,7 +104,6 @@ set_callback(function()
         wait = 2
       else
         players[1]:stun(0)
-        messpect(false)
       end
       set_timeout(function()
         players[1]:give_powerup(ENT_TYPE.ITEM_POWERUP_ANKH)
@@ -111,7 +113,6 @@ set_callback(function()
           players[1].flags = clr_flag(players[1].flags, 6)
         end
         if to_stun_timer > 0 then
-          messpect(true)
           players[1]:stun(to_stun_timer)
         end
         if players[1].layer ~= to_l then
@@ -148,8 +149,5 @@ set_callback(function()
   end
 end, ON.GUIFRAME)
 
-set_post_entity_spawn(function(ent)
-  --texture is items texture, wasn't able to figure out how to make this work for hh ropes
-  messpect(ent:get_texture(TEXTURE.DATA_TEXTURES_CHAR_BLACK_0), ent.animation_frame)
-  ent:set_texture(TEXTURE.DATA_TEXTURES_CHAR_BLACK_0)
-end, SPAWN_TYPE.SYSTEMIC, 0, ENT_TYPE.ITEM_ROPE)
+register_option_int("a_start_spawns", " ", "Characters spawned at start", 8, 0, 8)
+register_option_int("b_max_new_spawns", "", "Max amount of new characters spawned at new level", 8, 0, 8)
