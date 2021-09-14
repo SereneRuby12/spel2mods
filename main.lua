@@ -49,15 +49,15 @@ local portals = {
 
 local using_colors = portal_colors[1]
 
-local function get_next_block(x, y, ysum)
+local function get_next_block(x, y, ysum, xdir)
     local rx, ry = x%1, y%1 --relative x, y
-    local sx, sy = sign(x, y)
-    local ydiff = (1-x)*ysum
-    if ydiff+ry < 1 then
-        return true, x+(1-x), y+ydiff
+    local xdiff = xdir == 1 and b-rx or (rx==0 and -1 or -rx)
+    local ydiff = math.abs(xdiff)*ysum;
+    if ysum > 0 and ydiff+ry < b or ry+ydiff > (ry>0 and 0 or -b) then
+        return true, x+(xdiff), y+ydiff
     else
-        ydiff = 1-y
-        local xdiff = ydiff/ysum
+        ydiff = ysum > 0 and b-ry or -ry;
+        xdiff = xdir*math.abs(ydiff/ysum);
         return false, x+xdiff, y+ydiff
     end
 end
