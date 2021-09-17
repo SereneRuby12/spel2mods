@@ -262,19 +262,20 @@ set_callback(function()
             --messpect(buttons)
             local holding = get_entity(p.holding_uid)
             if holding and holding.type.id == ENT_TYPE.ITEM_CROSSBOW then
+                if test_flag(buttons, DOWN_DIR) then
+                    just_pressed_down[i] = false
+                else
+                    just_pressed_down[i] = true
+                end
+                messpect(just_shot[i])
                 if test_flag(buttons, 2) then  --whip
-                    if not (test_flag(buttons, DOWN_DIR) and p.standing_on_uid ~= -1) and just_pressed_down[i] then
+                    if not (test_flag(buttons, DOWN_DIR) and p.standing_on_uid ~= -1) then
                         buttons = clr_flag(buttons, 2)
                         if not just_shot[i] then
                             shoot_portal = true
-                            just_shot[i] = true
                         end
                     end
-                    if test_flag(buttons, DOWN_DIR) then
-                        just_pressed_down[i] = false
-                    else
-                        just_pressed_down[i] = true
-                    end
+                    just_shot[i] = true
                 else
                     just_shot[i] = false
                 end
@@ -367,10 +368,11 @@ set_callback(function()
                             f = ey > p.y
                         end
                     end
-                    if p.horiz ~= otherP.horiz then
-                        to_vx, to_vy = to_vy, to_vx
-                    end
                     if f and ent:topmost_mount().uid == uid then
+                        if p.horiz ~= otherP.horiz then
+                            to_vx, to_vy = to_vy, to_vx
+                            ent.falling_timer = 1
+                        end
                         messpect("teleported", i, p.x, p.y, otherP.x, otherP.y)
                         set_entity_flags( otherP.b_uid, clr_flag(get_entity_flags(p.b_uid), ENT_FLAG.SOLID) )
                         move_entity(uid, to_x, to_y, to_vx, to_vy)
