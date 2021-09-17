@@ -1,6 +1,8 @@
 meta.name = "portalunky"
 meta.author = "Estebanfer"
 
+register_option_bool("door_portal", "door button to portal", "Shoot a portal using the door button", false)
+
 local LEFT_DIR = 9 -- 256
 local RIGHT_DIR = 10 -- 512
 local UP_DIR = 11 -- 1024
@@ -132,7 +134,7 @@ local function get_raycast_collision(x, y, l, xdir, angle)
         local is_horiz, tosum_x, tosum_y = get_next_block(x, y, ysum, xdir, steps < 4)
         x, y = tosum_x, tosum_y
         for sum = -0.01, 0.02, 0.02 do
-            messpect(-0.5-sum, 0.5+sum)
+            --messpect(-0.5-sum, 0.5+sum)
             local g_ent = get_grid_entity_at(x-0.5-sum, y+0.5+sum, l)
             --local g_ent = get_grid_entity_at(x-0.49, y+0.49, l)
             table.insert(draw_x, x-0.51)
@@ -159,12 +161,14 @@ set_callback(function()
     using_colors = portal_colors[#players]
     local px, py, pl = get_position(players[1].uid)
     spawn(ENT_TYPE.ITEM_CROSSBOW, px, py, pl, 0, 0)
-    for i, p in ipairs(players) do -- For option only portal gun
-        --steal_input(p.uid)
-    end
 end, ON.START)
 
-set_callback(reset_portals_new_level, ON.LEVEL)
+set_callback(function()
+    for i, p in ipairs(players) do -- For option only portal gun¿
+        steal_input(p.uid)
+    end
+    reset_portals_new_level()
+end, ON.LEVEL)
 
 local next_port = {1, 1, 1, 1}
 
@@ -248,26 +252,45 @@ local function set_portal(b_uid, ply_n, n, positive, horiz)
     --messpect(next_port)
 end
 
+local just_shot = {true, true, true, true}
+local just_pressed_down = {}
 set_callback(function()
-    --[[for i, p in ipairs(players) do
-        if p ~= nil and test_flag(p.flags, ENT_FLAGS.DEAD) then
+    local shoot_portal = false
+    for i, p in ipairs(players) do
+        if p ~= nil and not test_flag(p.flags, ENT_FLAG.DEAD) then
             local buttons = read_stolen_input(p.uid)
-            if test_flag(buttons, 2) then  --whip
-                buttons = clr_flag(buttons, 2)
+            --messpect(buttons)
+            local holding = get_entity(p.holding_uid)
+            if holding and holding.type.id == ENT_TYPE.ITEM_CROSSBOW then
+                if test_flag(buttons, 2) then  --whip
+                    if not (test_flag(buttons, DOWN_DIR) and p.standing_on_uid ~= -1) and just_pressed_down[i] then
+                        buttons = clr_flag(buttons, 2)
+                        if not just_shot[i] then
+                            shoot_portal = true
+                            just_shot[i] = true
+                        end
+                    end
+                    if test_flag(buttons, DOWN_DIR) then
+                        just_pressed_down[i] = false
+                    else
+                        just_pressed_down[i] = true
+                    end
+                else
+                    just_shot[i] = false
+                end
+                holding.angle = portal_gun_angle[1] * bsign(not test_flag(holding.flags, ENT_FLAG.FACING_LEFT))
+                local arrow = get_entity(holding.holding_uid)
+                if arrow then
+                    arrow.color.r = using_colors[next_port[1]][1].r
+                    arrow.color.g = using_colors[next_port[1]][1].g
+                    arrow.color.b = using_colors[next_port[1]][1].b
+                end
             end
-        end
-    end]]
-    --code written apart, gotta move this to the players iterations
-    local holding = get_entity(players[1].holding_uid)
-    if holding and holding.type.id == ENT_TYPE.ITEM_CROSSBOW then
-        holding.angle = portal_gun_angle[1] * bsign(not test_flag(holding.flags, ENT_FLAG.FACING_LEFT))
-        local arrow = get_entity(holding.holding_uid)
-        if arrow then
-            arrow.color.r = using_colors[next_port[1]][1].r
-            arrow.color.g = using_colors[next_port[1]][1].g
-            arrow.color.b = using_colors[next_port[1]][1].b
+            send_input(p.uid, buttons)
         end
     end
+    --code written apart, gotta move this to the players iterations
+
     local px, py, pl = get_position(players[1].uid)
     actual_texture[1] = players[1]:get_texture()
     --messpect(players[1].buttons)
@@ -278,7 +301,7 @@ set_callback(function()
     else
         portal_gun_angle[1] = lerp(portal_gun_angle[1], 0, 0.25)
     end
-    if players[1]:is_button_pressed(BUTTON.DOOR) then
+    if shoot_portal or ( options.door_portal and players[1]:is_button_pressed(BUTTON.DOOR) ) then
         local prev_portal_b = portals[1][next_port[1]].b_uid
         set_entity_flags(prev_portal_b, set_flag(get_entity_flags(prev_portal_b), ENT_FLAG.SOLID) )
         portals[1][next_port[1]].x = -1
