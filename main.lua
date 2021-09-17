@@ -28,6 +28,10 @@ do
     portal_items_texture = define_texture(texture_def)
 end
 
+local p_sounds = {}
+p_sounds[1] = create_sound('portal_sound1.wav')
+p_sounds[2] = create_sound('portal_sound2.wav')
+
 local portal_colors = {
     {
         {{["r"]=0, ["g"]=0.5, ["b"]=1}},
@@ -178,6 +182,7 @@ end
 
 local function kill_ents(uids)
     for _, uid in ipairs(uids) do
+        move_entity(uid, 8, 0, 0, 0)
         kill_entity(uid)
     end
 end
@@ -227,6 +232,7 @@ end
 local function set_portal(b_uid, ply_n, n, positive, horiz)
     --messpect(ply_n, n)
     --messpect(portals[1][1].left)
+    p_sounds[next_port[ply_n]]:play():set_volume(0.5)
     portals[ply_n][n].positive = positive
     portals[ply_n][n].horiz = horiz
     local hitbox = get_hitbox(b_uid)
@@ -330,7 +336,7 @@ set_callback(function()
     for i, p in ipairs(portals[1]) do
         if p.x ~= -1 then
             --change extrude to left, right =
-            local uids = get_entities_overlapping_hitbox(0, MASK.PLAYER | MASK.ITEM, p.hitbox, p.l)
+            local uids = get_entities_overlapping_hitbox(0, MASK.PLAYER | MASK.ITEM | MASK.MONSTER | MASK.MOUNT, p.hitbox, p.l)
             local otherP = i==1 and portals[1][2] or portals[1][1]
             if #uids > 0 and otherP.x ~= -1 then
                 for iu, uid in ipairs(uids) do
