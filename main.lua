@@ -1,6 +1,7 @@
 meta.name = "portalunky"
 meta.author = "Estebanfer"
-
+--I have to remove the steal_input because the player ghosts sometimes don't get input back, maybe use the freezeray with infinite cooldown, and teleport a arrow every frame to it
+--I had a crash when setting a portal in the bounds, being in the portal, and placing it in another place
 register_option_bool("door_portal", "door button to portal", "Shoot a portal using the door button", false)
 
 local LEFT_DIR = 9 -- 256
@@ -164,12 +165,23 @@ end, SPAWN_TYPE.ANY, 0, ENT_TYPE.ITEM_METAL_ARROW)
 set_callback(function()
     using_colors = portal_colors[#players]
     local px, py, pl = get_position(players[1].uid)
-    spawn(ENT_TYPE.ITEM_CROSSBOW, px, py, pl, 0, 0)
+    for i = 1, #players do 
+        spawn_on_floor(ENT_TYPE.ITEM_CROSSBOW, px, py, pl)
+    end
 end, ON.START)
 
 set_callback(function()
     for i, p in ipairs(players) do -- For option only portal gun¿
         steal_input(p.uid)
+        set_on_kill(p.uid, function(ent)
+            messpect('returned')
+            if ent:has_powerup(ENT_TYPE.ITEM_POWERUP_ANKH) then
+                messpect('has ankh')
+            else
+                messpect('nope')
+                return_input(ent.uid)
+            end
+        end)
     end
     reset_portals_new_level()
 end, ON.LEVEL)
@@ -261,9 +273,10 @@ end
 local just_shot = {true, true, true, true}
 local just_pressed_down = {}
 set_callback(function()
-    local shoot_portal = false
-    for i, p in ipairs(players) do
+    for noti, p in ipairs(players) do
+        local i = p.inventory.player_slot
         if p ~= nil and not test_flag(p.flags, ENT_FLAG.DEAD) then
+            local shoot_portal = false
             local buttons = read_stolen_input(p.uid)
             --messpect(buttons)
             local holding = get_entity(p.holding_uid)
@@ -273,7 +286,6 @@ set_callback(function()
                 else
                     just_pressed_down[i] = true
                 end
-                messpect(just_shot[i])
                 if test_flag(buttons, 2) then  --whip
                     if not (test_flag(buttons, DOWN_DIR) and p.standing_on_uid ~= -1) then
                         buttons = clr_flag(buttons, 2)
@@ -285,104 +297,106 @@ set_callback(function()
                 else
                     just_shot[i] = false
                 end
-                holding.angle = portal_gun_angle[1] * bsign(not test_flag(holding.flags, ENT_FLAG.FACING_LEFT))
+                holding.angle = portal_gun_angle[i] * bsign(not test_flag(holding.flags, ENT_FLAG.FACING_LEFT))
                 local arrow = get_entity(holding.holding_uid)
                 if arrow then
-                    arrow.color.r = using_colors[next_port[1]][1].r
-                    arrow.color.g = using_colors[next_port[1]][1].g
-                    arrow.color.b = using_colors[next_port[1]][1].b
+                    arrow.color.r = using_colors[next_port[i]][i].r
+                    arrow.color.g = using_colors[next_port[i]][i].g
+                    arrow.color.b = using_colors[next_port[i]][i].b
                 end
             end
             send_input(p.uid, buttons)
-        end
-    end
-    --code written apart, gotta move this to the players iterations
-
-    local px, py, pl = get_position(players[1].uid)
-    actual_texture[1] = players[1]:get_texture()
-    --messpect(players[1].buttons)
-    if test_flag(state.player_inputs.player_slot_1.buttons, UP_DIR) then
-        portal_gun_angle[1] = lerp(portal_gun_angle[1], math.pi/2-0.01, 0.2)
-    elseif test_flag(state.player_inputs.player_slot_1.buttons, DOWN_DIR) then
-        portal_gun_angle[1] = lerp(portal_gun_angle[1], math.pi/(-2)+0.01, 0.2)
-    else
-        portal_gun_angle[1] = lerp(portal_gun_angle[1], 0, 0.25)
-    end
-    if shoot_portal or ( options.door_portal and players[1]:is_button_pressed(BUTTON.DOOR) ) then
-        local prev_portal_b = portals[1][next_port[1]].b_uid
-        set_entity_flags(prev_portal_b, set_flag(get_entity_flags(prev_portal_b), ENT_FLAG.SOLID) )
-        portals[1][next_port[1]].x = -1
-        kill_ents(portals[1][next_port[1]].border_uids)
-        portals[1][next_port[1]].border_uids = {}
-        local xdir_bool = test_flag(players[1].flags, ENT_FLAG.FACING_LEFT)
-        local xdir = xdir_bool and -1 or 1
-        local ent, x, y, aside = get_raycast_collision(px, py, pl, xdir, portal_gun_angle[1])
-        messpect(true, "block", ent, aside)
-        if ent then
-            local positive
-            if aside then
-                positive = xdir_bool
+            
+            local px, py, pl = get_position(p.uid)
+            --actual_texture[i] = p:get_texture()
+            --messpect(p.buttons)
+            if test_flag(state.player_inputs.player_slots[i].buttons, UP_DIR) then
+                portal_gun_angle[i] = lerp(portal_gun_angle[i], math.pi/2-0.01, 0.2)
+            elseif test_flag(state.player_inputs.player_slots[i].buttons, DOWN_DIR) then
+                portal_gun_angle[i] = lerp(portal_gun_angle[i], math.pi/(-2)+0.01, 0.2)
             else
-                positive = not sign_to_bool(portal_gun_angle[1])
+                portal_gun_angle[i] = lerp(portal_gun_angle[i], 0, 0.25)
             end
-            messpect('positive:', positive, 'aside', aside)
-            messpect(true, x, y)
-            box = get_hitbox(ent)
-            set_portal(ent, 1, next_port[1], positive, aside)
+            if shoot_portal or ( options.door_portal and p:is_button_pressed(BUTTON.DOOR) ) then
+                local prev_portal_b = portals[i][next_port[i]].b_uid
+                set_entity_flags(prev_portal_b, set_flag(get_entity_flags(prev_portal_b), ENT_FLAG.SOLID) )
+                portals[i][next_port[i]].x = -1
+                kill_ents(portals[i][next_port[i]].border_uids)
+                portals[i][next_port[i]].border_uids = {}
+                local xdir_bool = test_flag(p.flags, ENT_FLAG.FACING_LEFT)
+                local xdir = xdir_bool and -1 or 1
+                local ent, x, y, aside = get_raycast_collision(px, py, pl, xdir, portal_gun_angle[i])
+                messpect(true, "block", ent, aside)
+                if ent then
+                    local positive
+                    if aside then
+                        positive = xdir_bool
+                    else
+                        positive = not sign_to_bool(portal_gun_angle[i])
+                    end
+                    messpect('positive:', positive, 'aside', aside)
+                    messpect(true, x, y)
+                    box = get_hitbox(ent)
+                    set_portal(ent, i, next_port[i], positive, aside)
+                end
+            end
         end
     end
+
     touching_portal[1] = -1
     local moved = {}
-    for i, p in ipairs(portals[1]) do
-        if p.x ~= -1 then
-            --change extrude to left, right =
-            local uids = get_entities_overlapping_hitbox(0, MASK.PLAYER | MASK.ITEM | MASK.MONSTER | MASK.MOUNT, p.hitbox, p.l)
-            local otherP = i==1 and portals[1][2] or portals[1][1]
-            if #uids > 0 and otherP.x ~= -1 then
-                for iu, uid in ipairs(uids) do
-                    local brk = false
-                    messpect(moved)
-                    for _, uid1 in ipairs(moved) do
-                        messpect(uid, uid1)
-                        if uid == uid1 then
-                            brk = true
-                            break
+    for pl_i, pl_portal in ipairs(portals) do
+        for i, p in ipairs(pl_portal) do
+            if p.x ~= -1 then
+                --change extrude to left, right =
+                local uids = get_entities_overlapping_hitbox(0, MASK.PLAYER | MASK.ITEM | MASK.MONSTER | MASK.MOUNT, p.hitbox, p.l)
+                local otherP = i==1 and portals[pl_i][2] or portals[pl_i][1]
+                if #uids > 0 and otherP.x ~= -1 then
+                    for iu, uid in ipairs(uids) do
+                        local brk = false
+                        messpect(moved)
+                        for _, uid1 in ipairs(moved) do
+                            messpect(uid, uid1)
+                            if uid == uid1 then
+                                brk = true
+                                break
+                            end
                         end
-                    end
-                    if brk then break end
-                    local ent = get_entity(uid)
-                    local evx, evy = get_velocity(uid)
-                    local ex, ey, el = get_position(uid)
-                    --messpect(#uids, otherP.x, moved[1])
-                    touching_portal[1] = other_port(i)
-                    local f
-                    local to_x, to_y, to_vx, to_vy = otherP.x, otherP.y, evx, evy
-                    if p.horiz then
-                        to_x = otherP.x+0.1*bsign(otherP.positive)
-                        to_vx = evx*bsign(not (otherP.positive == p.positive))
-                        if p.positive then
-                            f = ex < p.x
+                        if brk then break end
+                        local ent = get_entity(uid)
+                        local evx, evy = get_velocity(uid)
+                        local ex, ey, el = get_position(uid)
+                        --messpect(#uids, otherP.x, moved[1])
+                        --touching_portal[1] = other_port(i)
+                        local f
+                        local to_x, to_y, to_vx, to_vy = otherP.x, otherP.y, evx, evy
+                        if p.horiz then
+                            to_x = otherP.x+0.1*bsign(otherP.positive)
+                            to_vx = evx*bsign(not (otherP.positive == p.positive))
+                            if p.positive then
+                                f = ex < p.x
+                            else
+                                f = ex > p.x
+                            end
                         else
-                            f = ex > p.x
+                            to_y = otherP.y+0.2*bsign(otherP.positive)
+                            to_vy = evy*bsign(not (otherP.positive == p.positive))
+                            if p.positive then
+                                f = ey < p.y
+                            else
+                                f = ey > p.y
+                            end
                         end
-                    else
-                        to_y = otherP.y+0.2*bsign(otherP.positive)
-                        to_vy = evy*bsign(not (otherP.positive == p.positive))
-                        if p.positive then
-                            f = ey < p.y
-                        else
-                            f = ey > p.y
+                        if f and ent:topmost_mount().uid == uid then
+                            if p.horiz ~= otherP.horiz then
+                                to_vx, to_vy = to_vy, to_vx
+                                ent.falling_timer = 1
+                            end
+                            messpect("teleported", i, p.x, p.y, otherP.x, otherP.y)
+                            set_entity_flags( otherP.b_uid, clr_flag(get_entity_flags(p.b_uid), ENT_FLAG.SOLID) )
+                            move_entity(uid, to_x, to_y, to_vx, to_vy)
+                            moved[#moved+1] = uid
                         end
-                    end
-                    if f and ent:topmost_mount().uid == uid then
-                        if p.horiz ~= otherP.horiz then
-                            to_vx, to_vy = to_vy, to_vx
-                            ent.falling_timer = 1
-                        end
-                        messpect("teleported", i, p.x, p.y, otherP.x, otherP.y)
-                        set_entity_flags( otherP.b_uid, clr_flag(get_entity_flags(p.b_uid), ENT_FLAG.SOLID) )
-                        move_entity(uid, to_x, to_y, to_vx, to_vy)
-                        moved[#moved+1] = uid
                     end
                 end
             end
@@ -422,28 +436,30 @@ set_callback(function(render_ctx, draw_depth)
         render_ctx:draw_world_texture(actual_texture[1], gy, gx, rect, white)
     end]]
     if draw_depth == 2 then
-        for i, p in ipairs(portals[1]) do
-            if p.x ~= -1 then
-                if p.drawbox then
-                    local alpha = 0.1
-                    local xsum = p.horiz and (p.positive and 1 or -1) or 0
-                    local ysum = (not p.horiz) and (p.positive and 1 or -1) or 0
-                    local left, top, right, bottom = p.drawbox.left + xsum, p.drawbox.top + ysum, p.drawbox.right + xsum, p.drawbox.bottom + ysum
-                    for di = 1, 10 do
-                        render_ctx:draw_world_texture(portal_items_texture, p.horiz and 0 or 1, p.positive and 0 or 1, left, top, right, bottom, Color:new(using_colors[i][1].r, using_colors[i][1].g, using_colors[i][1].b, alpha))
-                        if xsum == -1 then
-                            left = left+0.1
-                        elseif xsum == 1 then
-                            right = right-0.1
-                        elseif ysum == -1 then
-                            bottom = bottom + 0.1
-                        else
-                            top = top - 0.1
+        for pl_i, pl_portal in ipairs(portals) do
+            for i, p in ipairs(pl_portal) do
+                if p.x ~= -1 then
+                    if p.drawbox then
+                        local alpha = 0.1
+                        local xsum = p.horiz and (p.positive and 1 or -1) or 0
+                        local ysum = (not p.horiz) and (p.positive and 1 or -1) or 0
+                        local left, top, right, bottom = p.drawbox.left + xsum, p.drawbox.top + ysum, p.drawbox.right + xsum, p.drawbox.bottom + ysum
+                        for di = 1, 10 do
+                            render_ctx:draw_world_texture(portal_items_texture, p.horiz and 0 or 1, p.positive and 0 or 1, left, top, right, bottom, Color:new(using_colors[i][pl_i].r, using_colors[i][pl_i].g, using_colors[i][pl_i].b, alpha))
+                            if xsum == -1 then
+                                left = left+0.1
+                            elseif xsum == 1 then
+                                right = right-0.1
+                            elseif ysum == -1 then
+                                bottom = bottom + 0.1
+                            else
+                                top = top - 0.1
+                            end
+                            alpha = alpha + 0.05
                         end
-                        alpha = alpha + 0.05
                     end
+                    --render_ctx:draw_world_texture(TEXTURE.DATA_TEXTURES_FLOOR_CAVE_0, 0, 0, p.hitbox, white)
                 end
-                --render_ctx:draw_world_texture(TEXTURE.DATA_TEXTURES_FLOOR_CAVE_0, 0, 0, p.hitbox, white)
             end
         end
     end
