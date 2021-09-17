@@ -28,7 +28,7 @@ end
 
 local portal_colors = {
     {
-        {{["r"]=0, ["g"]=0, ["b"]=1}},
+        {{["r"]=0, ["g"]=0.5, ["b"]=1}},
         {{["r"]=1, ["g"]=0.5, ["b"]=0}}
     },
     
@@ -76,7 +76,7 @@ portals = {
 end
 reset_portals_new_level()
 
-local using_colors = portal_colors[1]
+local using_colors = portal_colors[1] --use: using_colors[portalnum][playernum].r
 
 local function sign(num)
     if num < 0 then
@@ -166,7 +166,6 @@ end, ON.START)
 
 set_callback(reset_portals_new_level, ON.LEVEL)
 
-local moved = {[1] = 0}
 local next_port = {1, 1, 1, 1}
 
 local function other_port(v)
@@ -262,6 +261,12 @@ set_callback(function()
     local holding = get_entity(players[1].holding_uid)
     if holding and holding.type.id == ENT_TYPE.ITEM_CROSSBOW then
         holding.angle = portal_gun_angle[1] * bsign(not test_flag(holding.flags, ENT_FLAG.FACING_LEFT))
+        local arrow = get_entity(holding.holding_uid)
+        if arrow then
+            arrow.color.r = using_colors[next_port[1]][1].r
+            arrow.color.g = using_colors[next_port[1]][1].g
+            arrow.color.b = using_colors[next_port[1]][1].b
+        end
     end
     local px, py, pl = get_position(players[1].uid)
     actual_texture[1] = players[1]:get_texture()
@@ -297,13 +302,24 @@ set_callback(function()
         end
     end
     touching_portal[1] = -1
+    local moved = {}
     for i, p in ipairs(portals[1]) do
         if p.x ~= -1 then
             --change extrude to left, right =
             local uids = get_entities_overlapping_hitbox(0, MASK.PLAYER | MASK.ITEM, p.hitbox, p.l)
-            local otherP = i==1 and portals[1][2] or portals[1][1] 
-            if #uids > 0 and otherP.x ~= -1 then-- and moved[1] <= 0 then
+            local otherP = i==1 and portals[1][2] or portals[1][1]
+            if #uids > 0 and otherP.x ~= -1 then
                 for iu, uid in ipairs(uids) do
+                    local brk = false
+                    messpect(moved)
+                    for _, uid1 in ipairs(moved) do
+                        messpect(uid, uid1)
+                        if uid == uid1 then
+                            brk = true
+                            break
+                        end
+                    end
+                    if brk then break end
                     local ent = get_entity(uid)
                     local evx, evy = get_velocity(uid)
                     local ex, ey, el = get_position(uid)
@@ -320,7 +336,7 @@ set_callback(function()
                             f = ex > p.x
                         end
                     else
-                        to_y = otherP.y+0.1*bsign(otherP.positive)
+                        to_y = otherP.y+0.2*bsign(otherP.positive)
                         to_vy = evy*bsign(not (otherP.positive == p.positive))
                         if p.positive then
                             f = ey < p.y
@@ -331,17 +347,16 @@ set_callback(function()
                     if p.horiz ~= otherP.horiz then
                         to_vx, to_vy = to_vy, to_vx
                     end
-                    if f then
-                        --messpect("teleported", i, p.x, p.y, otherP.x, otherP.y)
+                    if f and ent:topmost_mount().uid == uid then
+                        messpect("teleported", i, p.x, p.y, otherP.x, otherP.y)
                         set_entity_flags( otherP.b_uid, clr_flag(get_entity_flags(p.b_uid), ENT_FLAG.SOLID) )
-                        move_entity(uids[1], to_x, to_y, to_vx, to_vy)
-                        moved[1] = 1
+                        move_entity(uid, to_x, to_y, to_vx, to_vy)
+                        moved[#moved+1] = uid
                     end
                 end
             end
         end
     end
-    moved[1] = moved[1] - 1
 end, ON.FRAME)
 set_callback(function(d_ctx)
     --[[if box then
@@ -362,19 +377,19 @@ end
 
 set_callback(function(render_ctx, draw_depth)
     if #players < 1 then return end
-    if draw_depth == players[1].type.draw_depth - 1 then
+    --[[if draw_depth == players[1].type.draw_depth - 1 then --fix it or remove it
         local px, py = get_position(players[1].uid)
         local draw_aabb = AABB:new(px-0.575, py+0.575, px+0.575, py-0.575)
         --render_ctx:draw_world_texture(portal_items_texture, 4, 0, draw_aabb, white)
         --render_ctx:draw_world_texture(portal_items_texture, 4, 4, draw_aabb, Color:aqua())
         if touching_portal[1] == -1 then return end
-        local x, y, l = portals[1][touching_portal[1]].x, portals[1][touching_portal[1]].y, portals[1][touching_portal[1]].l
+        local x, y, l = portals[1][touching_portal[1] ].x, portals[1][touching_portal[1] ].y, portals[1][touching_portal[1] ].l
         x = x - 0.2 - px%1
         y = y + 0.75
         rect = AABB:new(x, y, x + 1.35, y - 1.35)
         local gy, gx = anim_frame_to_grid(players[1].animation_frame)
         render_ctx:draw_world_texture(actual_texture[1], gy, gx, rect, white)
-    end
+    end]]
     if draw_depth == 2 then
         for i, p in ipairs(portals[1]) do
             if p.x ~= -1 then
