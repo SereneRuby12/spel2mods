@@ -84,6 +84,7 @@ end
 reset_portals_new_level()
 
 local using_colors = portal_colors[1] --use: using_colors[portalnum][playernum].r
+local portal_guns = {}
 
 local function sign(num)
     if num < 0 then
@@ -152,27 +153,48 @@ local function get_raycast_collision(x, y, l, xdir, angle)
     until steps == 100
 end
 
-set_post_entity_spawn(function(ent)
-    ent:set_texture(portal_items_texture)
-end, SPAWN_TYPE.ANY, 0, ENT_TYPE.ITEM_CROSSBOW)
+local function set_p_detail(uid)
+    local det = get_entity(uid)
+    det.flags = set_flag(set_flag(det.flags, ENT_FLAG.PASSES_THROUGH_EVERYTHING), ENT_FLAG.NO_GRAVITY)
+    det.color.r = 0
+    det.color.g = 0.5
+    det:set_draw_depth(25)
+    det:set_texture(portal_items_texture)
+end
 
-set_post_entity_spawn(function(ent)
-    ent:set_texture(portal_items_texture)
-    ent.color.r = 0
-    ent.color.g = 0.5
-end, SPAWN_TYPE.ANY, 0, ENT_TYPE.ITEM_METAL_ARROW)
+local function set_add_portal_gun(p_gun_uid, wielder)
+    local w_slot, w_type
+    if wielder then
+        w_slot, w_type = wielder.inventory.player_slot, wielder.type.id
+    else
+        w_slot, w_type = -1, -1
+    end
+    get_entity(p_gun_uid):set_texture(portal_items_texture)
+    local x, y, l = get_position(p_gun_uid)
+    local p_gun_detail = spawn_on_floor(ENT_TYPE.ITEM_ROCK, x, y, l)
+    set_p_detail(p_gun_detail)
+    portal_guns[p_gun_uid] = { ['detail'] = p_gun_detail, ['wielder_slot'] = -1, ['wielder_type'] = -1 }
+end
+
+local just_started
 
 set_callback(function()
+    just_started = true
     using_colors = portal_colors[#players]
+    portal_guns = {}
     local px, py, pl = get_position(players[1].uid)
     for i = 1, #players do 
-        spawn_on_floor(ENT_TYPE.ITEM_CROSSBOW, px, py, pl)
+        local p_gun_uid = spawn_on_floor(ENT_TYPE.ITEM_FREEZERAY, px, py, pl)
+        get_entity(p_gun_uid):set_texture(portal_items_texture)
+        local p_gun_detail = spawn_on_floor(ENT_TYPE.ITEM_ROCK, px, py, pl)
+        set_p_detail(p_gun_detail)
+        portal_guns[p_gun_uid] = { ['detail'] = p_gun_detail, ['wielder_slot'] = -1, ['wielder_type'] = -1 }
     end
 end, ON.START)
 
 set_callback(function()
     for i, p in ipairs(players) do -- For option only portal gun¿
-        steal_input(p.uid)
+        --steal_input(p.uid)
         set_on_kill(p.uid, function(ent)
             messpect('returned')
             if ent:has_powerup(ENT_TYPE.ITEM_POWERUP_ANKH) then
@@ -184,6 +206,28 @@ set_callback(function()
         end)
     end
     reset_portals_new_level()
+    if just_started then just_started = false return end
+    local toremove = {}
+    for i, p in pairs(portal_guns) do --fix this on multiplayer
+        if p.wielder_slot ~= -1 then
+            for pi, ply in ipairs(players) do
+                messpect(p.wielder_slot, ply.inventory.player_slot)
+                if ply.inventory.player_slot == p.wielder_slot then
+                    messpect(true)
+                    local holding = get_entity(ply.holding_uid)
+                    if holding and holding.type.id == ENT_TYPE.ITEM_FREEZERAY then
+                        toremove[#toremove+1] = i
+                        set_add_portal_gun(ply.holding_uid, ply)
+                    end
+                end
+            end
+        else
+            toremove[#toremove+1] = i
+        end
+    end
+    for _, v in ipairs(toremove) do
+        portal_guns[v] = nil
+    end
 end, ON.LEVEL)
 
 local next_port = {1, 1, 1, 1}
@@ -263,6 +307,7 @@ local function set_portal(b_uid, ply_n, n, positive, horiz)
         hitbox.top, hitbox.bottom = hitbox.top+(positive and 0.02 or -0.02), hitbox.bottom+(positive and -0.02 or 0.02)
         hitbox.left, hitbox.right = hitbox.left + 0.05, hitbox.right - 0.05
     end
+    portals[ply_n][n].l = l
     portals[ply_n][n].hitbox = hitbox
     --messpect(hitbox.left, hitbox.right)
     portals[ply_n][n].b_uid = b_uid
@@ -273,14 +318,34 @@ end
 local just_shot = {true, true, true, true}
 local just_pressed_down = {}
 set_callback(function()
+    for gun, info in pairs(portal_guns) do
+        --messpect('weilders', info.wielder_slot)
+        if info.wielder_slot == -1 then
+            get_entity(info.detail):set_draw_depth(30)
+        end
+        info.wielder_slot = -1
+        local _, _, dl = get_position(info.detail)
+        local x, y, l = get_position(gun)
+        local vx, vy = get_velocity(gun)
+        move_entity(info.detail, x, y, vx, vy)
+        if l ~= dl then
+            get_entity(info.detail):set_layer(l)
+        end
+        local gun_ent = get_entity(gun)
+        gun_ent.cooldown = 2
+        --gun_ent:set_draw_depth(25)
+    end
+
     for noti, p in ipairs(players) do
         local i = p.inventory.player_slot
         if p ~= nil and not test_flag(p.flags, ENT_FLAG.DEAD) then
             local shoot_portal = false
-            local buttons = read_stolen_input(p.uid)
+            local buttons = read_input(p.uid)
             --messpect(buttons)
-            local holding = get_entity(p.holding_uid)
-            if holding and holding.type.id == ENT_TYPE.ITEM_CROSSBOW then
+            if portal_guns[p.holding_uid] then
+                --messpect('weilders1', portal_guns[p.holding_uid].wielder_slot)
+                local holding = get_entity(p.holding_uid)
+                holding.special_offsetx = 0.25
                 if test_flag(buttons, DOWN_DIR) then
                     just_pressed_down[i] = false
                 else
@@ -297,13 +362,19 @@ set_callback(function()
                 else
                     just_shot[i] = false
                 end
-                holding.angle = portal_gun_angle[i] * bsign(not test_flag(holding.flags, ENT_FLAG.FACING_LEFT))
-                local arrow = get_entity(holding.holding_uid)
-                if arrow then
-                    arrow.color.r = using_colors[next_port[i]][i].r
-                    arrow.color.g = using_colors[next_port[i]][i].g
-                    arrow.color.b = using_colors[next_port[i]][i].b
+                local facing_left = test_flag(holding.flags, ENT_FLAG.FACING_LEFT)
+                holding.angle = portal_gun_angle[i] * bsign(not facing_left)
+
+                local detail = get_entity(portal_guns[holding.uid].detail)
+                detail.angle = holding.angle
+                detail.flags = facing_left and set_flag(detail.flags, ENT_FLAG.FACING_LEFT) or clr_flag(detail.flags, ENT_FLAG.FACING_LEFT)
+                detail.color.r = using_colors[next_port[i]][i].r
+                detail.color.g = using_colors[next_port[i]][i].g
+                detail.color.b = using_colors[next_port[i]][i].b
+                if portal_guns[p.holding_uid].wielder_slot == -1 then
+                    detail:set_draw_depth(25)
                 end
+                portal_guns[p.holding_uid].wielder_slot = p.inventory.player_slot
             end
             send_input(p.uid, buttons)
             
@@ -392,6 +463,9 @@ set_callback(function()
                                 to_vx, to_vy = to_vy, to_vx
                                 ent.falling_timer = 1
                             end
+                            if ent.layer ~= otherP.l then
+                                ent:set_layer(otherP.l)
+                            end
                             messpect("teleported", i, p.x, p.y, otherP.x, otherP.y)
                             set_entity_flags( otherP.b_uid, clr_flag(get_entity_flags(p.b_uid), ENT_FLAG.SOLID) )
                             move_entity(uid, to_x, to_y, to_vx, to_vy)
@@ -438,14 +512,14 @@ set_callback(function(render_ctx, draw_depth)
     if draw_depth == 2 then
         for pl_i, pl_portal in ipairs(portals) do
             for i, p in ipairs(pl_portal) do
-                if p.x ~= -1 then
+                if p.x ~= -1 and state.camera_layer == p.l then
                     if p.drawbox then
                         local alpha = 0.1
                         local xsum = p.horiz and (p.positive and 1 or -1) or 0
                         local ysum = (not p.horiz) and (p.positive and 1 or -1) or 0
                         local left, top, right, bottom = p.drawbox.left + xsum, p.drawbox.top + ysum, p.drawbox.right + xsum, p.drawbox.bottom + ysum
                         for di = 1, 10 do
-                            render_ctx:draw_world_texture(portal_items_texture, p.horiz and 0 or 1, p.positive and 0 or 1, left, top, right, bottom, Color:new(using_colors[i][pl_i].r, using_colors[i][pl_i].g, using_colors[i][pl_i].b, alpha))
+                            render_ctx:draw_world_texture(portal_items_texture, p.horiz and 0 or 1, p.positive and 1 or 2, left, top, right, bottom, Color:new(using_colors[i][pl_i].r, using_colors[i][pl_i].g, using_colors[i][pl_i].b, alpha))
                             if xsum == -1 then
                                 left = left+0.1
                             elseif xsum == 1 then
