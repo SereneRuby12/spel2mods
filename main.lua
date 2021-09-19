@@ -145,7 +145,7 @@ local function get_raycast_collision(x, y, l, xdir, angle)
             --local g_ent = get_grid_entity_at(x-0.49, y+0.49, l)
             table.insert(draw_x, x-0.51)
             table.insert(draw_y, y+0.51)
-            if test_flag(get_entity_flags(g_ent), ENT_FLAG.SOLID) then
+            if g_ent ~= -1 and test_flag(get_entity(g_ent).type.properties_flags, 1) then
                 return g_ent, x, y, is_horiz
             end
         end
@@ -207,26 +207,24 @@ set_callback(function()
     end
     reset_portals_new_level()
     if just_started then just_started = false return end
-    local toremove = {}
-    for i, p in pairs(portal_guns) do --fix this on multiplayer
-        if p.wielder_slot ~= -1 then
+    local prev_slots = {}
+    for i, p in pairs(portal_guns) do
+        prev_slots[i] = p.wielder_slot
+    end
+    messpect('prev', prev_slots)
+    portal_guns = {}
+    for i, slot in pairs(prev_slots) do --fix this on multiplayer
+        if slot ~= -1 then
             for pi, ply in ipairs(players) do
-                messpect(p.wielder_slot, ply.inventory.player_slot)
-                if ply.inventory.player_slot == p.wielder_slot then
-                    messpect(true)
+                messpect(slot, ply.inventory.player_slot)
+                if ply.inventory.player_slot == slot then
                     local holding = get_entity(ply.holding_uid)
                     if holding and holding.type.id == ENT_TYPE.ITEM_FREEZERAY then
-                        toremove[#toremove+1] = i
                         set_add_portal_gun(ply.holding_uid, ply)
                     end
                 end
             end
-        else
-            toremove[#toremove+1] = i
         end
-    end
-    for _, v in ipairs(toremove) do
-        portal_guns[v] = nil
     end
 end, ON.LEVEL)
 
@@ -238,8 +236,9 @@ end
 
 local function kill_ents(uids)
     for _, uid in ipairs(uids) do
-        move_entity(uid, 8, 0, 0, 0)
-        kill_entity(uid)
+        get_entity(uid):destroy()
+        --move_entity(uid, 8, 0, 0, 0)
+        --kill_entity(uid)
     end
 end
 
@@ -264,17 +263,17 @@ local function spawn_portal_borders(x, y, l, positive, horiz)
         borders_uids[1] = spawn_border(x, y, l, nil, 0.05, nil, 0.45)
         borders_uids[2] = spawn_border(x, y, l, nil, 0.05, nil, -0.55)
         if positive then
-            borders_uids[3] = spawn_border(x, y, l, 0, nil, -0.5, nil, true)
+            borders_uids[3] = spawn_border(x, y, l, 0.01, nil, -0.5, nil, true)
         else
-            borders_uids[3] = spawn_border(x, y, l, 0, nil, 0.5, nil, true)
+            borders_uids[3] = spawn_border(x, y, l, 0.01, nil, 0.5, nil, true)
         end
         --[[local border_ent = get_entity(borders_uids[1])
         border_ent.hitboxy = 0
         border_ent.offsety = 0.5
         border_ent.flags = set_flag(set_flag(border_ent.flags, ENT_FLAG.INVISIBLE), ENT_FLAG.NO_GRAVITY)]]
     else
-        borders_uids[1] = spawn_border(x, y, l, 0, nil, -0.5, nil, true)
-        borders_uids[2] = spawn_border(x, y, l, 0, nil, 0.5, nil, true)
+        borders_uids[1] = spawn_border(x, y, l, 0.01, nil, -0.5, nil, true)
+        borders_uids[2] = spawn_border(x, y, l, 0.01, nil, 0.5, nil, true)
         messpect("borderPositive", positive)
         if positive then
             borders_uids[3] = spawn_border(x, y, l, nil, 0.05, nil, -0.55)
