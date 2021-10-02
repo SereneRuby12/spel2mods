@@ -1,0 +1,16 @@
+{
+    "author": "Estebanfer",
+    "name": "Bumblebee",
+    "description": "Adds Bumblebee",
+    "version": "1.0",
+    "image_map": {
+        "custom_images/mountsCut.png": {
+            "Data/Textures/mounts.png": [
+                {
+                    "from": [ 0, 0, 2048, 512 ],
+                    "to": [ 0, 0, 2048, 512 ]
+                }
+            ]
+        }
+    }
+}
