@@ -47,9 +47,6 @@ set_callback(function()
 end, ON.POST_LEVEL_GENERATION)
 
 set_callback(function()
-    --local topmost_mount = players[1]:topmost_mount()
-    --messpect(topmost_mount.type.id)
-    --if topmost_mount.type.id == ENT_TYPE.MOUNT_TURKEY then
     --for _,uid in ipairs(get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)) do
     --    get_entity(uid).y = -10
     --end
@@ -125,6 +122,8 @@ set_callback(function()
                 else
                     send_input(rider.uid, input )
                 end
+            else
+                bumblebees[uid] = nil
             end
         end
     end
