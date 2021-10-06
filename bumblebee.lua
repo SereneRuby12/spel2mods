@@ -171,8 +171,6 @@ set_callback(function()
                 else
                     send_input(rider.uid, input )
                 end
-            else
-                bumblebees[uid] = nil
             end
         else
             bumblebees[uid] = nil
