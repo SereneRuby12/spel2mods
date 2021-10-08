@@ -10,6 +10,17 @@ local RIGHT_DIR = 10 -- 512
 local UP_DIR = 11 -- 1024
 local DOWN_DIR = 12 -- 2048
 
+local function get_blocks(floors)
+    local blocks = {}
+    for i, v in ipairs(floors) do
+        local flags = get_entity_flags(v)
+        if test_flag(flags, ENT_FLAG.SOLID) then
+            table.insert(blocks, v)
+        end
+    end
+    return blocks
+end
+
 --fix random bug with player not being able to move after level transition while mounting bumblebee?
 local bumblebee_texture
 do
@@ -182,7 +193,7 @@ set_callback(function()
                     hitbx.left = hitbx.left + 0.1
                     hitbx.right = hitbx.right - 0.1
                     bumblebee.x = bumblebee.x+(math.random()/10-0.05)
-                    if #get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer) == 0 then
+                    if #get_blocks(get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer)) == 0 then
                         messpect('notOverlapping')
                         bumblebee.y = bumblebee.y+(math.random()/10-0.05)+y
                     else
