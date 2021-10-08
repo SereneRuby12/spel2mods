@@ -69,7 +69,11 @@ local function set_bumblebees_from_previous(companions)
             end
         end
     end
-    
+end
+
+local function spawn_bumblebee(x, y, l)
+    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, x, y, l, 0, 0)
+    bumblebees[uid] = new_bumblebee(get_entity(uid))
 end
 
 set_callback(function()
@@ -90,15 +94,38 @@ set_callback(function()
     set_bumblebees_from_previous(companions)
     bumblebees_t_info = {}
     bumblebees_t_info_hh = {}
+    
+    --for testing spawn_grid_entity(ENT_TYPE.FLOORSTYLED_BEEHIVE, px+1, py, pl)
+    local bees = get_entities_by_type(ENT_TYPE.FLOORSTYLED_BEEHIVE)--ENT_TYPE.MONS_BEE)
+    messpect("bees:", #bees)
+    for _,uid in ipairs(bees) do
+        messpect("block")
+        if math.random() > 0.9 then
+            local x, y, l = get_position(uid)
+            if #get_entities_at(0, MASK.FLOOR, x, y+1, LAYER.FRONT, 0.2) == 0 then
+                spawn_bumblebee(x, y+1, l)
+            end
+        end
+    end
 end, ON.POST_LEVEL_GENERATION)
 
 set_callback(function()
     do
         local cookedturkeys = get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)
-        for i = #cookedturkeys, 0, -1 do
-            if prev_destroyed_bumblebees > 0 then
-                get_entity(cookedturkeys[i]).y = -10
-                prev_destroyed_bumblebees = prev_destroyed_bumblebees - 1
+        if #cookedturkeys > 0 then
+            for i = #cookedturkeys, 0, -1 do
+                if prev_destroyed_bumblebees > 0 then
+                    get_entity(cookedturkeys[i]).y = -10
+                    prev_destroyed_bumblebees = prev_destroyed_bumblebees - 1
+                end
+            end
+        end
+        
+        for i, v in ipairs(get_entities_by_type(ENT_TYPE.ITEM_TURKEY_NECK)) do
+            local ent = get_entity(v)
+            local from_ent = ent:topmost_mount()
+            if from_ent ~= ent and bumblebees[from_ent.uid] then
+                get_entity(v).y = -1000
             end
         end
     end
@@ -114,22 +141,23 @@ set_callback(function()
             if bumblebee.rider_uid == -1 then
                 if not c_ent.not_stolen then
                     messpect(-1, c_ent.not_stolen)
-                    return_input(c_ent.rider_uid)
+                    --return_input(c_ent.rider_uid)
                     c_ent.not_stolen = true
+                    messpect(c_ent.not_stolen, "c_ent.not_stolen")
                     c_ent.rider_uid = -1
                 end
             else
                 local rider = get_entity(bumblebee.rider_uid)
-                messpect(true, rider.uid)
+                messpect(true, rider.uid, c_ent.not_stolen)
                 c_ent.rider_uid = bumblebee.rider_uid
                 if c_ent.not_stolen then
                     messpect('STOLEN')
-                    steal_input(rider.uid)
+                    --steal_input(rider.uid)
                     c_ent.not_stolen = false
                 else
                     messpect('not stolen now')
                 end
-                local input = read_stolen_input(rider.uid)
+                local input = read_input(rider.uid)--read_stolen_input(rider.uid)
                 --messpect(input)
                 if c_ent.flying then
                     bumblebee.velocityy = 0.0001
@@ -150,8 +178,17 @@ set_callback(function()
                     elseif test_flag(input, DOWN_DIR) then
                         y = -0.1
                     end
+                    local hitbx = get_hitbox(uid, LAYER.FRONT, 0, 0.15, 0)
+                    hitbx.left = hitbx.left + 0.1
+                    hitbx.right = hitbx.right - 0.1
                     bumblebee.x = bumblebee.x+(math.random()/10-0.05)
-                    bumblebee.y = bumblebee.y+(math.random()/10-0.05)+y
+                    if #get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer) == 0 then
+                        messpect('notOverlapping')
+                        bumblebee.y = bumblebee.y+(math.random()/10-0.05)+y
+                    else
+                        messpect('Overlapping')
+                        bumblebee.y = bumblebee.y+(math.random()/20-0.05) + (y < 0 and y or 0)
+                    end
                 end
                 if test_flag(input, JUMP) then
                     if not c_ent.rider_jumped and bumblebee.standing_on_uid == -1 and c_ent.flying_timer ~= 0 and bumblebee.some_state == 0 and bumblebee:topmost() == bumblebee then --some_state is for checking if the mount is wet, topmost() is for checking if is in a pipe
@@ -159,7 +196,7 @@ set_callback(function()
                         if c_ent.flying then
                             messpect('pressed', c_ent.flying)
                             bumblebee.velocityy = 0.01
-                            bumblebee.can_doublejump = true
+                            --bumblebee.can_doublejump = true
                             bumblebee.flags = set_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
                         else
                             bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
@@ -173,11 +210,6 @@ set_callback(function()
                     input = clr_flag(input, WHIP)
                 end
                 messpect(bumblebee.some_state, c_ent.flying, bumblebee.state, c_ent.flying_timer, input)
-                if c_ent.flying then
-                    send_input(rider.uid, set_flag(input, JUMP) )
-                else
-                    send_input(rider.uid, input )
-                end
             end
         else
             bumblebees[uid] = nil
@@ -224,8 +256,7 @@ end, ON.TRANSITION)
 
 register_option_button("spawn", "Spawn bumblebee", function()
     local px, py, pl = get_position(players[1].uid)
-    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, px, py, pl, 0, 0)
-    bumblebees[uid] = new_bumblebee(get_entity(uid))
+    spawn_bumblebee(px, py, pl)
 end)
 
 register_option_button("spawntamed", "Spawn tamed bumblebee", function()
