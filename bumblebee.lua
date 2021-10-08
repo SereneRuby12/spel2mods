@@ -11,7 +11,6 @@ local UP_DIR = 11 -- 1024
 local DOWN_DIR = 12 -- 2048
 
 --fix random bug with player not being able to move after level transition while mounting bumblebee?
---add better transitions and not make all turkeys to be bumblebees
 local bumblebee_texture
 do
     local texture_def = get_texture_definition(TEXTURE.DATA_TEXTURES_MOUNTS_0)
@@ -19,6 +18,7 @@ do
     bumblebee_texture = define_texture(texture_def)
 end
 
+local prev_destroyed_bumblebees = 0 --for deleting cookedturkey when a bumblebee dies
 local bumblebees = {}
 local function new_bumblebee(ent) 
     ent:set_texture(bumblebee_texture)
@@ -42,21 +42,21 @@ end
 
 local function set_bumblebees_from_previous(companions)
     for i, info in ipairs(bumblebees_t_info) do
-            messpect(info)
-            for ip,p in ipairs(players) do
-                messpect(p.inventory.player_slot, info.slot)
-                if p.inventory.player_slot == info.slot then
-                    messpect('trueslot')
-                    if info.mounted then
-                        local bee = p:topmost_mount()
-                        bumblebees[bee.uid] = new_bumblebee(bee)
-                    else
-                        local bee = p:get_held_entity()
-                        bumblebees[bee.uid] = new_bumblebee(bee)
-                    end
+        messpect(info)
+        for ip,p in ipairs(players) do
+            messpect(p.inventory.player_slot, info.slot)
+            if p.inventory.player_slot == info.slot then
+                messpect('trueslot')
+                if info.mounted then
+                    local bee = p:topmost_mount()
+                    bumblebees[bee.uid] = new_bumblebee(bee)
+                else
+                    local bee = p:get_held_entity()
+                    bumblebees[bee.uid] = new_bumblebee(bee)
                 end
             end
         end
+    end
     for i, uid in ipairs(companions) do
         messpect(uid)
         local ent = get_entity(uid)
@@ -69,7 +69,7 @@ local function set_bumblebees_from_previous(companions)
             end
         end
     end
-
+    
 end
 
 set_callback(function()
@@ -93,9 +93,16 @@ set_callback(function()
 end, ON.POST_LEVEL_GENERATION)
 
 set_callback(function()
-    --for _,uid in ipairs(get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)) do
-    --    get_entity(uid).y = -10
-    --end
+    do
+        local cookedturkeys = get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)
+        for i = #cookedturkeys, 0, -1 do
+            if prev_destroyed_bumblebees > 0 then
+                get_entity(cookedturkeys[i]).y = -10
+                prev_destroyed_bumblebees = prev_destroyed_bumblebees - 1
+            end
+        end
+    end
+    prev_destroyed_bumblebees = 0
     for uid,c_ent in pairs(bumblebees) do
         local bumblebee = get_entity(uid)
         if bumblebee then
@@ -174,6 +181,7 @@ set_callback(function()
             end
         else
             bumblebees[uid] = nil
+            prev_destroyed_bumblebees = prev_destroyed_bumblebees + 1
         end
     end
 end, ON.FRAME)
