@@ -211,6 +211,7 @@ set_callback(function()
                             bumblebee.flags = set_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
                         else
                             bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                            bumblebee.can_doublejump = true
                         end
                     end
                     c_ent.rider_jumped = true
