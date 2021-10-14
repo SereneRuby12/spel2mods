@@ -1,7 +1,9 @@
 meta.name = "portalunky"
 meta.author = "Estebanfer"
---I have to remove the steal_input because the player ghosts sometimes don't get input back, maybe use the freezeray with infinite cooldown, and teleport a arrow every frame to it
---I had a crash when setting a portal in the bounds, being in the portal, and placing it in another place
+--TODO: I had a crash when setting a portal in the bounds, being in the portal, and placing it in another place
+--Do something to fix portal glitch that allows players to go through floors
+--Fix when a portal gun is destroyed
+--Local multiplayer crashes on start
 register_option_bool("door_portal", "door button to portal", "Shoot a portal using the door button", false)
 
 local LEFT_DIR = 9 -- 256
@@ -59,27 +61,27 @@ local portal_gun_angle = {0, 0, 0, 0}
 local portals
 
 local function reset_portals_new_level()
-portals = {
-    { --p1
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
-    },
-    
-    { --p2
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
-    },
+    portals = {
+        { --p1
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
+        },
+        
+        { --p2
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
+        },
 
-    { --p3
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
-    },
+        { --p3
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
+        },
 
-    { --p4
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
-    {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
-    },
-}
+        { --p4
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} },
+        {["x"] = -1, ["y"]= -1, ["l"] = -1, ["hitbox"] = nil, ["b_uid"] = -1, ["positive"]=false, ["horiz"] = false, ["border_uids"] = {} }
+        },
+    }
 end
 reset_portals_new_level()
 
@@ -236,7 +238,10 @@ end
 
 local function kill_ents(uids)
     for _, uid in ipairs(uids) do
-        get_entity(uid):destroy()
+        local ent = get_entity(uid)
+        if ent then
+            ent:destroy()
+        end
         --move_entity(uid, 8, 0, 0, 0)
         --kill_entity(uid)
     end
