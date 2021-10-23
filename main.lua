@@ -17,12 +17,8 @@ local function is_not_on_safe_zone(x, y)
     return true
 end
 
-local function insert_to_used(x, y)
-    if used[x] then
-        used[x][y] = true
-    else
-        used[x] = { [y] = true }
-    end
+local function insert_to_used(uid)
+    used[uid] = true
 end
 
 local function valid_crushblock_spawn(ent, uid, x, y, l)
@@ -34,7 +30,7 @@ end
 local function valid_crushblock_l_spawn(ent, uid, x, y, l) --made for large crushblock
     local top_e_type = get_grid_entity_at(x, y+1, l)
     top_e_type = top_e_type == -1 or get_entity(top_e_type).type.id
-    return not test_flag(ent.flags, ENT_FLAG.SHOP_FLOOR) and is_not_on_safe_zone(x, y) and not (used[x] and used[x][y]) and ent.type.id > ENT_TYPE.FLOOR_BORDERTILE_OCTOPUS and ent.type.id ~= ENT_TYPE.FLOOR_PIPE and top_e_type ~= ENT_TYPE.FLOOR_ALTAR and top_e_type ~= ENT_TYPE.FLOOR_EGGPLANT_ALTAR
+    return not test_flag(ent.flags, ENT_FLAG.SHOP_FLOOR) and is_not_on_safe_zone(x, y) and not used[uid] and ent.type.id > ENT_TYPE.FLOOR_BORDERTILE_OCTOPUS and ent.type.id ~= ENT_TYPE.FLOOR_PIPE and top_e_type ~= ENT_TYPE.FLOOR_ALTAR and top_e_type ~= ENT_TYPE.FLOOR_EGGPLANT_ALTAR
 end
 
 local function destroy_floor(ent)
@@ -72,7 +68,7 @@ set_callback(function()
         local ent = get_entity(uid)
         local x, y, l = get_position(uid)
         if prng:random_float(PRNG_CLASS.PROCEDURAL_SPAWNS) < spawn_chance and valid_crushblock_spawn(ent, uid, x, y, l) then
-            if not (used[x] and used[x][y]) then
+            if not used[uid] then
                 if prng:random_float(PRNG_CLASS.PROCEDURAL_SPAWNS) < large_spawn_chance then
                     local right_uid = get_grid_entity_at(x+1, y, l)
                     local down_uid =  get_grid_entity_at(x, y-1, l)
@@ -84,7 +80,7 @@ set_callback(function()
                         test_flag(down_right.flags, ENT_FLAG.SOLID) and valid_crushblock_l_spawn(down_right, down_right_uid, x+1, y-1, l) then
                             destroy_floor(ent); destroy_floor(right); destroy_floor(down); destroy_floor(down_right)
                             spawn(ENT_TYPE.ACTIVEFLOOR_CRUSH_TRAP_LARGE, x+0.5, y-0.5, l, 0, 0)
-                            insert_to_used(x, y); insert_to_used(x+1, y); insert_to_used(x, y-1) insert_to_used(x+1, y-1)
+                            insert_to_used(uid); insert_to_used(right_uid); insert_to_used(down_uid) insert_to_used(down_right_uid)
                         else
                             replace_with_crushtrap(ent, x, y, l)
                         end
