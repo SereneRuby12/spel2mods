@@ -3,7 +3,8 @@ Playlunky nightly or Overlunky whip
 ## :information_source: Mod details
 Crush traps now spawn everywhere, replacing floor tiles.
 There are 'safe zones', where crush blocks don't spawn, those zones can be useful for planning next move. You can configure the amount and radius. Safe zones can be easily recognized if using 100% spawn chance.
-Also, liquids act a bit weird with this mod. (liquids still collide with floors that were destroyed and replaced with crush blocks)
+Also, liquids act a bit weird with this mod (liquids still collide with floors that were destroyed and replaced with crush blocks).
+Another bug is that sometimes olmec spawns under the floor (probably only when skiping intro).
 
 ## :joystick: Good mods to play with
 ##### [SUPER HOT LUNKY](https://spelunky.fyi/mods/m/super-hot) by @Mr_Auto 
