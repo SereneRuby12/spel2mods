@@ -5,11 +5,11 @@ Crush traps now appear everywhere, replacing floor tiles.
 There are 'safe zones', where crush blocks don't spawn, those zones can be useful for planning next move. You can configure the amount and radius. Safe zones are easily recognized if using 100% spawn chance.
 
 ## :joystick: Good mods to play with
-#####[SUPER HOT LUNKY](https://spelunky.fyi/mods/m/super-hot) by Mr_Auto
+##### [SUPER HOT LUNKY](https://spelunky.fyi/mods/m/super-hot) by @Mr_Auto 
 The game pauses when not moving, giving you time to think what to do.
-#####[Slower Crush Traps](https://spelunky.fyi/mods/m/slower-crush-traps) by Charade
+##### [Slower Crush Traps](https://spelunky.fyi/mods/m/slower-crush-traps) by @Charade 
 Crush traps move slower, giving you more reaction time
-#####[SlowMo](https://spelunky.fyi/mods/m/slowmo) by me
+##### [SlowMo](https://spelunky.fyi/mods/m/slowmo) by me ( @estebanfer )
 You can toggle slowmo to make it easier.
 (Probably SUPER HOT LUNKY and SlowMo aren't compatible, I didn't test it tho)
 ---
