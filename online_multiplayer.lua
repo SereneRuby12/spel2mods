@@ -1,7 +1,9 @@
-meta.name = "Walls are shifting (online)"
-meta.version = "0.8"
-meta.description = "Crushblocks spawn everywhere"
-meta.author = "Estebanfer"
+meta = {
+    name = "Walls are shifting (online)",
+    version = "0.8",
+    description = "Crushblocks spawn everywhere, might desync after some levels",
+    author = "Estebanfer"
+}
 
 local function destroy_floor(ent)
     for i=FLOOR_SIDE.TOP, FLOOR_SIDE.RIGHT do

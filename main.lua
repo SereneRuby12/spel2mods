@@ -1,11 +1,11 @@
-meta.name = "Walls are shifting"
-meta.version = "1.0"
-meta.description = "Crushblocks spawn everywhere"
-meta.author = "Estebanfer"
+meta = {
+    name = "Walls are shifting",
+    version = "1.0",
+    description = "Crushblocks spawn everywhere",
+    author = "Estebanfer"
+}
 local floor_types = {ENT_TYPE.FLOOR_GENERIC, ENT_TYPE.FLOOR_JUNGLE, ENT_TYPE.FLOORSTYLED_MINEWOOD, ENT_TYPE.FLOORSTYLED_STONE, ENT_TYPE.FLOORSTYLED_TEMPLE, ENT_TYPE.FLOORSTYLED_PAGODA, ENT_TYPE.FLOORSTYLED_BABYLON, ENT_TYPE.FLOORSTYLED_SUNKEN, ENT_TYPE.FLOORSTYLED_BEEHIVE, ENT_TYPE.FLOORSTYLED_VLAD, ENT_TYPE.FLOORSTYLED_COG, ENT_TYPE.FLOORSTYLED_MOTHERSHIP, ENT_TYPE.FLOORSTYLED_DUAT, ENT_TYPE.FLOORSTYLED_PALACE, ENT_TYPE.FLOORSTYLED_GUTS}
-local zones = {}
-local tofix = {}
-local used = {}
+local zones, tofix, used = {}, {}, {}
 
 local function is_not_on_safe_zone(x, y)
     for i,zone in ipairs(zones) do
@@ -59,7 +59,7 @@ set_callback(function()
             zones[i] = {['x'] = prng:random_int(2, max_x, PRNG_CLASS.PROCEDURAL_SPAWNS), ['y'] = prng:random_int(90, max_y, PRNG_CLASS.PROCEDURAL_SPAWNS)}--math.random(2, state.width*10+2), ['y'] = math.random(90, state.height*8+90)}
         end
     end
-    entrance_doors = get_entities_by_type(ENT_TYPE.FLOOR_DOOR_ENTRANCE)
+    local entrance_doors = get_entities_by_type(ENT_TYPE.FLOOR_DOOR_ENTRANCE)
     for _,uid in ipairs(entrance_doors) do
         local dx, dy, _ = get_position(uid)
         zones[#zones+1] = {['x'] = dx, ['y'] = dy}
@@ -120,4 +120,4 @@ register_option_int('a2_large_spawn_chance', 'Large crush trap chance', '0 is 0%
 register_option_bool('d_spawn_safe_zones', 'enable safe zones', '(won\'t disable spawn safe zone)', true)
 register_option_int('e_safe_zone_divisor', 'Safe zones divisor', 'the number of safe zones is the amount of rooms, divided by this number', 6, 1, 10)
 register_option_int('f_safe_zone_radius', 'safe zones radius', '', 5, 0, 12)
-register_option_bool('g_fix_floors', 'Try to fix floors deco', '', true)
+register_option_bool('g_fix_floors', 'Fix floors deco', '', true)
