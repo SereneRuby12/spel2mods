@@ -13,11 +13,11 @@ Crush traps move slower, giving you more reaction time
 You can toggle slowmo to make it easier.
 (Probably SUPER HOT LUNKY and SlowMo aren't compatible, I didn't test it tho)
 ---
-#### Available settings
+#### :tools: Available settings
 - Set crush trap chance
 - Set chance for a crush trap to be large
 - Enable safe zones
 - Change amount of safe zones per room:
-The script sets the amount of safe zones dividing the amount of rooms by this number that you can set.
+The script sets the amount of safe zones dividing the amount of rooms by this number that you can change.
 - Set safe zones radius
-- Disable floor decoration fixing (In case of some sor error I guess?) 
+- Disable floor decoration fixing
