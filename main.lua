@@ -2,7 +2,7 @@ meta.name = "Walls are shifting"
 meta.version = "1.0"
 meta.description = "Crushblocks spawn everywhere"
 meta.author = "Estebanfer"
-local floor_types = {ENT_TYPE.FLOOR_GENERIC, ENT_TYPE.FLOOR_JUNGLE, ENT_TYPE.FLOORSTYLED_MINEWOOD, ENT_TYPE.FLOORSTYLED_STONE, ENT_TYPE.FLOORSTYLED_TEMPLE, ENT_TYPE.FLOORSTYLED_PAGODA, ENT_TYPE.FLOORSTYLED_BABYLON, ENT_TYPE.FLOORSTYLED_SUNKEN, ENT_TYPE.FLOORSTYLED_BEEHIVE, ENT_TYPE.FLOORSTYLED_VLAD, ENT_TYPE.FLOORSTYLED_MOTHERSHIP, ENT_TYPE.FLOORSTYLED_DUAT, ENT_TYPE.FLOORSTYLED_PALACE, ENT_TYPE.FLOORSTYLED_GUTS, ENT_TYPE.FLOOR_SURFACE}
+local floor_types = {ENT_TYPE.FLOOR_GENERIC, ENT_TYPE.FLOOR_JUNGLE, ENT_TYPE.FLOORSTYLED_MINEWOOD, ENT_TYPE.FLOORSTYLED_STONE, ENT_TYPE.FLOORSTYLED_TEMPLE, ENT_TYPE.FLOORSTYLED_PAGODA, ENT_TYPE.FLOORSTYLED_BABYLON, ENT_TYPE.FLOORSTYLED_SUNKEN, ENT_TYPE.FLOORSTYLED_BEEHIVE, ENT_TYPE.FLOORSTYLED_VLAD, ENT_TYPE.FLOORSTYLED_COG, ENT_TYPE.FLOORSTYLED_MOTHERSHIP, ENT_TYPE.FLOORSTYLED_DUAT, ENT_TYPE.FLOORSTYLED_PALACE, ENT_TYPE.FLOORSTYLED_GUTS}
 local zones = {}
 local tofix = {}
 local used = {}
@@ -35,7 +35,7 @@ end
 local function valid_crushblock_l_spawn(ent, uid, x, y, l, radius) --made for large crushblock
     local top_e_type = get_grid_entity_at(x, y+1, l)
     top_e_type = top_e_type == -1 or get_entity(top_e_type).type.id
-    return not test_flag(ent.flags, ENT_FLAG.SHOP_FLOOR) and distance(entrance_door, uid) > radius and is_not_on_safe_zone(x, y) and not (used[x] and used[x][y]) and ent.type.id > ENT_TYPE.FLOOR_BORDERTILE_OCTOPUS and  top_e_type ~= ENT_TYPE.FLOOR_ALTAR and top_e_type ~= ENT_TYPE.FLOOR_EGGPLANT_ALTAR
+    return not test_flag(ent.flags, ENT_FLAG.SHOP_FLOOR) and distance(entrance_door, uid) > radius and is_not_on_safe_zone(x, y) and not (used[x] and used[x][y]) and ent.type.id > ENT_TYPE.FLOOR_BORDERTILE_OCTOPUS and ent.type.id ~= ENT_TYPE.FLOOR_PIPE and top_e_type ~= ENT_TYPE.FLOOR_ALTAR and top_e_type ~= ENT_TYPE.FLOOR_EGGPLANT_ALTAR
 end
 
 local function destroy_floor(ent)
@@ -105,7 +105,11 @@ set_callback(function()
             for i,uid in ipairs(tofix) do
                 local ent = get_entity(uid)
                 if ent then
-                    ent:fix_decorations(false, true)
+                    if ent.type.id < ENT_TYPE.FLOORSTYLED_MINEWOOD then
+                        ent:fix_decorations(false, true)
+                    else
+                        ent:decorate_internal()
+                    end
                 end
             end
         end, 1)
