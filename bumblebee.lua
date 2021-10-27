@@ -1,14 +1,27 @@
-meta.name = "Bumblebee mod"
-meta.version = "0.5?"
-meta.description = "Adds bumblebees"
-meta.author = "Estebanfer"
-
+meta = {
+    name = "Bumblebee mod",
+    version = "0.7?",
+    description = "Adds bumblebees",
+    author = "Estebanfer"
+}
+--TODO: add the sticking to walls thing
 local JUMP = 1
 local WHIP = 2
 local LEFT_DIR = 9 -- 256
 local RIGHT_DIR = 10 -- 512
 local UP_DIR = 11 -- 1024
 local DOWN_DIR = 12 -- 2048
+
+local function get_blocks(floors)
+    local blocks = {}
+    for i, v in ipairs(floors) do
+        local flags = get_entity_flags(v)
+        if test_flag(flags, ENT_FLAG.SOLID) then
+            table.insert(blocks, v)
+        end
+    end
+    return blocks
+end
 
 --fix random bug with player not being able to move after level transition while mounting bumblebee?
 local bumblebee_texture
@@ -27,7 +40,8 @@ local function new_bumblebee(ent)
         ["flying"] = false,
         ["flying_timer"] = 300,
         ["rider_uid"] = -1,
-        ["rider_jumped"] = false
+        ["rider_jumped"] = false,
+        ["rider_jumps"] = 0 --for telepack and vlads, 0 means that has jumped 0 times on air
     }
 end
 
@@ -69,7 +83,23 @@ local function set_bumblebees_from_previous(companions)
             end
         end
     end
-    
+end
+
+local function spawn_bumblebee(x, y, l)
+    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, x, y, l, 0, 0)
+    bumblebees[uid] = new_bumblebee(get_entity(uid))
+end
+
+local function reset_rider_jumps(rider, backitem, backitem_type, jumps)
+    messpect('reload jumps')
+    if backitem_type == ENT_TYPE.ITEM_TELEPORTER_BACKPACK then
+        backitem.teleport_number = jumps
+    elseif backitem_type == ENT_TYPE.ITEM_VLADS_CAPE then
+        messpect('vlads ', jumps)
+        if jumps == 0 then
+            backitem.can_double_jump = true
+        end
+    end
 end
 
 local function spawn_bumblebee(x, y, l)
@@ -149,26 +179,27 @@ set_callback(function()
                 bumblebee.color.g = 1
                 bumblebee.color.b = 1
                 c_ent.flying_timer = 60 * (bumblebee.health+1)
+                c_ent.rider_jumps = -1
             end
             if bumblebee.rider_uid == -1 then
                 if not c_ent.not_stolen then
                     messpect(-1, c_ent.not_stolen)
-                    return_input(c_ent.rider_uid)
+                    --return_input(c_ent.rider_uid)
                     c_ent.not_stolen = true
+                    messpect(c_ent.not_stolen, "c_ent.not_stolen")
                     c_ent.rider_uid = -1
                 end
             else
                 local rider = get_entity(bumblebee.rider_uid)
-                messpect(true, rider.uid)
+                --messpect(true, rider.uid, c_ent.not_stolen)
                 c_ent.rider_uid = bumblebee.rider_uid
                 if c_ent.not_stolen then
                     messpect('STOLEN')
-                    steal_input(rider.uid)
+                    --steal_input(rider.uid)
                     c_ent.not_stolen = false
-                else
-                    messpect('not stolen now')
+                    c_ent.flying = false
                 end
-                local input = read_stolen_input(rider.uid)
+                local input = read_input(rider.uid)--read_stolen_input(rider.uid)
                 --messpect(input)
                 if c_ent.flying then
                     bumblebee.velocityy = 0.0001
@@ -180,6 +211,11 @@ set_callback(function()
                     if c_ent.flying_timer == 0 or bumblebee.state ~= 8 and bumblebee.state ~= 9 and (bumblebee.standing_on_uid == -1 or not test_flag(input, UP_DIR)) then
                         messpect(bumblebee.state)
                         c_ent.flying = false
+                        local backitem = get_entity(rider:worn_backitem())
+                        if backitem then
+                            messpect('backitem')
+                            reset_rider_jumps(rider, backitem, backitem.type.id, c_ent.rider_jumps)
+                        end
                         bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
                     end
                     local y = 0
@@ -189,34 +225,71 @@ set_callback(function()
                     elseif test_flag(input, DOWN_DIR) then
                         y = -0.1
                     end
+                    local hitbx = get_hitbox(uid, LAYER.FRONT, 0, 0.15, 0)
+                    hitbx.left = hitbx.left + 0.1
+                    hitbx.right = hitbx.right - 0.1
                     bumblebee.x = bumblebee.x+(math.random()/10-0.05)
-                    bumblebee.y = bumblebee.y+(math.random()/10-0.05)+y
+                    if #get_blocks(get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer)) == 0 then
+                        --messpect('notOverlapping')
+                        bumblebee.y = bumblebee.y+(math.random()/10-0.05)+y
+                    else
+                        --messpect('Overlapping')
+                        bumblebee.y = bumblebee.y+(math.random()/20-0.05) + (y < 0 and y or 0)
+                    end
                 end
                 if test_flag(input, JUMP) then
                     if not c_ent.rider_jumped and bumblebee.standing_on_uid == -1 and c_ent.flying_timer ~= 0 and bumblebee.some_state == 0 and bumblebee:topmost() == bumblebee then --some_state is for checking if the mount is wet, topmost() is for checking if is in a pipe
                         c_ent.flying = not c_ent.flying
+                        local backitem_uid = rider:worn_backitem()
                         if c_ent.flying then
                             messpect('pressed', c_ent.flying)
                             bumblebee.velocityy = 0.01
-                            bumblebee.can_doublejump = true
+                            --bumblebee.can_doublejump = true
                             bumblebee.flags = set_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                            if (backitem_uid ~= -1) then
+                                local backitem = get_entity(backitem_uid) --ITEM_TELEPORTER_BACKPACK
+                                local backitem_type = backitem.type.id
+                                if backitem_type == ENT_TYPE.ITEM_HOVERPACK then
+                                    backitem.is_on = false
+                                elseif c_ent.rider_jumps == -1 then
+                                    if backitem_type == ENT_TYPE.ITEM_TELEPORTER_BACKPACK then
+                                        --add save teleport number
+                                        messpect('jumps reset', c_ent.rider_jumps, backitem.teleport_number)
+                                        c_ent.rider_jumps = backitem.teleport_number --done?
+                                        backitem.teleport_number = 3
+                                    elseif backitem_type == ENT_TYPE.ITEM_VLADS_CAPE then
+                                        if backitem.can_double_jump then
+                                            c_ent.rider_jumps = 0
+                                            backitem.can_double_jump = false
+                                        else
+                                            c_ent.rider_jumps = 1
+                                        end
+                                    end
+                                end
+                            end
                         else
+                            if (backitem_uid ~= -1) then
+                                local backitem = get_entity(backitem_uid) --ITEM_TELEPORTER_BACKPACK
+                                if backitem.type.id == ENT_TYPE.ITEM_HOVERPACK then
+                                    backitem.is_on = false
+                                end
+                            end
                             bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                            --bumblebee.can_doublejump = true
                         end
                     end
                     c_ent.rider_jumped = true
                 else
                     c_ent.rider_jumped = false
+                    if not c_ent.flying and c_ent.flying_timer ~= 0 then
+                        messpect('canDoubleJump')
+                        bumblebee.can_doublejump = true
+                    end
                 end
                 if test_flag(input, WHIP) and rider.holding_uid == -1 or bumblebee.state == 5 then
                     input = clr_flag(input, WHIP)
                 end
-                messpect(bumblebee.some_state, c_ent.flying, bumblebee.state, c_ent.flying_timer, input)
-                if c_ent.flying then
-                    send_input(rider.uid, set_flag(input, JUMP) )
-                else
-                    send_input(rider.uid, input )
-                end
+                --messpect(bumblebee.some_state, c_ent.flying, bumblebee.state, c_ent.flying_timer, input)
             end
         else
             bumblebees[uid] = nil
