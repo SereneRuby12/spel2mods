@@ -72,14 +72,36 @@ local function set_bumblebees_from_previous(companions)
     
 end
 
-set_callback(function()
-    not_stolen = {true, true, true, true}
-    mount_flying = {false, false, false, false}
-    mount_pos = {{['x'] = -1, ['y'] = -1}, {['x'] = -1, ['y'] = -1}, {['x'] = -1, ['y'] = -1}, {['x'] = -1, ['y'] = -1}}
-end, ON.LEVEL)
+local function spawn_bumblebee(x, y, l)
+    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, x, y, l, 0, 0)
+    bumblebees[uid] = new_bumblebee(get_entity(uid))
+    message('spawned')
+    return uid
+end
+
+--bee spawn
+local function is_valid_bumblebee_spawn(x, y, l)
+    local floor = get_grid_entity_at(x, y, l)
+    if floor == -1 then
+        local top_floor = get_grid_entity_at(x, y+1, l)
+        if top_floor == -1 then
+            local down_floor = get_entity(get_grid_entity_at(x, y-1, l))
+            if down_floor and test_flag(down_floor.flags, ENT_FLAG.SOLID) and down_floor.type.id ~= ENT_TYPE.FLOOR_THORN_VINE and down_floor.type.id ~= ENT_TYPE.FLOOR_JUNGLE_SPEAR_TRAP then
+                return true
+            end
+        end
+    end
+    return false
+end
+local bumblebee_chance = define_procedural_spawn("sample_bumblebee", spawn_bumblebee, is_valid_bumblebee_spawn)
+set_callback(function(room_gen_ctx)
+    bumblebees = {}
+    if (state.theme == THEME.JUNGLE) then
+        room_gen_ctx:set_procedural_spawn_chance(bumblebee_chance, 150)
+    end
+end, ON.POST_ROOM_GENERATION)
 
 set_callback(function()
-    bumblebees = {}
     --[[local turkeys = get_entities_by_type(ENT_TYPE.MOUNT_TURKEY)
     for i, uid in ipairs(turkeys) do
         --get_entity(uid):set_texture(bumblebee_texture)
@@ -90,15 +112,32 @@ set_callback(function()
     set_bumblebees_from_previous(companions)
     bumblebees_t_info = {}
     bumblebees_t_info_hh = {}
+    
+    --bee spawn on beehives
+    local chance = 1
+    local beehives = get_entities_by(ENT_TYPE.FLOORSTYLED_BEEHIVE, MASK.ANY, LAYER.FRONT)
+    messpect("beehives:", #beehives)
+    for _,uid in ipairs(beehives) do
+        if math.random() <= chance then
+            local x, y, l = get_position(uid)
+            if #get_entities_at(0, MASK.FLOOR, x, y+1, LAYER.FRONT, 0.5) == 0 then
+                messpect("spawned")
+                spawn_bumblebee(x, y+1, l)
+                chance = chance/5
+            end
+        end
+    end
 end, ON.POST_LEVEL_GENERATION)
 
 set_callback(function()
     do
         local cookedturkeys = get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)
-        for i = #cookedturkeys, 0, -1 do
-            if prev_destroyed_bumblebees > 0 then
-                get_entity(cookedturkeys[i]).y = -10
-                prev_destroyed_bumblebees = prev_destroyed_bumblebees - 1
+        if #cookedturkeys > 0 then
+            for i = #cookedturkeys, 0, -1 do
+                if prev_destroyed_bumblebees > 0 then
+                    get_entity(cookedturkeys[i]).y = -10
+                    prev_destroyed_bumblebees = prev_destroyed_bumblebees - 1
+                end
             end
         end
     end
@@ -224,14 +263,10 @@ end, ON.TRANSITION)
 
 register_option_button("spawn", "Spawn bumblebee", function()
     local px, py, pl = get_position(players[1].uid)
-    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, px, py, pl, 0, 0)
-    bumblebees[uid] = new_bumblebee(get_entity(uid))
+    spawn_bumblebee(px, py, pl)
 end)
 
 register_option_button("spawntamed", "Spawn tamed bumblebee", function()
     local px, py, pl = get_position(players[1].uid)
-    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, px, py, pl, 0, 0)
-    local ent = get_entity(uid)
-    ent:tame(true)
-    bumblebees[uid] = new_bumblebee(ent)
+    get_entity(spawn_bumblebee(px, py, pl)):tame(true)
 end)
