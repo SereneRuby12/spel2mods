@@ -6,11 +6,11 @@ meta = {
 }
 --TODO: add the sticking to walls thing
 local JUMP = 1
-local WHIP = 2
 local LEFT_DIR = 9 -- 256
 local RIGHT_DIR = 10 -- 512
 local UP_DIR = 11 -- 1024
 local DOWN_DIR = 12 -- 2048
+local HALF_PI = math.pi/2
 
 local function get_blocks(floors)
     local blocks = {}
@@ -36,12 +36,14 @@ local bumblebees = {}
 local function new_bumblebee(ent) 
     ent:set_texture(bumblebee_texture)
     return {
-        ["not_stolen"] = true,
+        ["not_ridden"] = true,
         ["flying"] = false,
         ["flying_timer"] = 300,
-        ["rider_uid"] = -1,
         ["rider_jumped"] = false,
-        ["rider_jumps"] = 0 --for telepack and vlads, 0 means that has jumped 0 times on air
+        ["rider_jumps"] = 0, --for telepack and vlads, 0 means that has jumped 0 times on air
+        ["climb_frame"] = 0,
+        ["not_climbing"] = true,
+        ["callb"] = -1
     }
 end
 
@@ -82,6 +84,13 @@ local function set_bumblebees_from_previous(companions)
                 bumblebees[bee.uid] = new_bumblebee(bee)
             end
         end
+    end
+end
+
+local function update_climbing(bumblebee)
+    if bumblebees[bumblebee.uid] then
+        messpect('update_climb')
+        bumblebee.animation_frame = bumblebees[bumblebee.uid].climb_frame
     end
 end
 
@@ -157,6 +166,13 @@ set_callback(function()
                 end
             end
         end
+        for i, v in ipairs(get_entities_by_type(ENT_TYPE.ITEM_TURKEY_NECK)) do
+            local ent = get_entity(v)
+            local from_ent = ent:topmost_mount()
+            if from_ent ~= ent and bumblebees[from_ent.uid] then
+                get_entity(v).y = -1000
+            end
+        end
     end
     prev_destroyed_bumblebees = 0
     for uid,c_ent in pairs(bumblebees) do
@@ -169,20 +185,23 @@ set_callback(function()
                 c_ent.rider_jumps = -1
             end
             if bumblebee.rider_uid == -1 then
-                if not c_ent.not_stolen then
-                    c_ent.not_stolen = true
-                    c_ent.rider_uid = -1
+                if not c_ent.not_ridden then
+                    c_ent.not_ridden = true
+                    clear_entity_callback(uid, c_ent.callb)
+                    bumblebee.angle = 0
+                    bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                    c_ent.not_climbing = true
                 end
             else
+                local climbing = false
                 local rider = get_entity(bumblebee.rider_uid)
-                if c_ent.not_stolen then
-                    --messpect('STOLEN')
-                    --steal_input(rider.uid)
-                    c_ent.not_stolen = false
+                if c_ent.not_ridden then
+                    c_ent.not_ridden = false
                     c_ent.flying = false
                 end
                 local input = read_input(rider.uid)
                 if c_ent.flying then
+                    bumblebee.angle = 0
                     bumblebee.velocityy = 0.0001
                     c_ent.flying_timer = c_ent.flying_timer - 1
                     if c_ent.flying_timer < 60 then
@@ -204,15 +223,67 @@ set_callback(function()
                     elseif test_flag(input, DOWN_DIR) then
                         y = -0.1
                     end
-                    local hitbx = get_hitbox(uid, LAYER.FRONT, 0, 0.15, 0)
-                    hitbx.left = hitbx.left + 0.1
-                    hitbx.right = hitbx.right - 0.1
                     bumblebee.x = bumblebee.x+(math.random()/10-0.05)
+                    local hitbx = get_hitbox(uid, 0, 0, 0.15)
+                    hitbx.left, hitbx.right = hitbx.left + 0.1, hitbx.right - 0.1
                     if #get_blocks(get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer)) == 0 then
                         bumblebee.y = bumblebee.y+(math.random()/10-0.05)+y
                     else
                         bumblebee.y = bumblebee.y+(math.random()/20-0.05) + (y < 0 and y or 0)
                     end
+                else --climbing
+                    if (bumblebee.velocityy < 0 or not c_ent.not_climbing) and not test_flag(input, JUMP) then
+                        if test_flag(input, LEFT_DIR) then
+                            local hitbx = get_hitbox(uid, 0, -0.1, 0)
+                            hitbx.top, hitbx.bottom = hitbx.top - 0.5, hitbx.bottom + 0.1
+                            if #get_blocks(get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer)) ~= 0 then
+                                bumblebee.angle = -HALF_PI
+                                climbing = true
+                            end
+                        elseif test_flag(input, RIGHT_DIR) then
+                            local hitbx = get_hitbox(uid, 0, 0.1, 0)
+                            hitbx.top, hitbx.bottom = hitbx.top - 0.5, hitbx.bottom + 0.1
+                            if #get_blocks(get_entities_overlapping_hitbox(0, MASK.FLOOR | MASK.ACTIVEFLOOR, hitbx, bumblebee.layer)) ~= 0 then
+                                bumblebee.angle = HALF_PI
+                                climbing = true
+                            end
+                        end
+                    end
+                end
+                if climbing then
+                    if c_ent.not_climbing then
+                        c_ent.callb = set_post_statemachine(uid, update_climbing)
+                        c_ent.not_climbing = false
+                        bumblebee.can_doublejump = true
+                    end
+                    bumblebee.flags = set_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                    if test_flag(input, UP_DIR) then
+                        bumblebee.velocityy = 0.05
+                        if state.time_level % 2 == 0 then
+                            if c_ent.climb_frame > 7 then
+                                c_ent.climb_frame = 1
+                            else
+                                c_ent.climb_frame = c_ent.climb_frame + 1
+                            end
+                        end
+                    elseif test_flag(input, DOWN_DIR) then
+                        bumblebee.velocityy = -0.05
+                        if state.time_level % 2 == 0 then
+                            if c_ent.climb_frame < 2 then
+                                c_ent.climb_frame = 8
+                            else
+                                c_ent.climb_frame = c_ent.climb_frame - 1
+                            end
+                        end
+                    else
+                        bumblebee.velocityy = 0
+                        c_ent.climb_frame = 0
+                    end
+                elseif not c_ent.not_climbing then
+                    clear_entity_callback(uid, c_ent.callb)
+                    bumblebee.angle = 0
+                    bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                    c_ent.not_climbing = true
                 end
                 if test_flag(input, JUMP) then
                     if not c_ent.rider_jumped and bumblebee.standing_on_uid == -1 and c_ent.flying_timer ~= 0 and bumblebee.some_state == 0 and bumblebee:topmost() == bumblebee then --some_state is for checking if the mount is wet, topmost() is for checking if is in a pipe
@@ -259,9 +330,6 @@ set_callback(function()
                     if not c_ent.flying and c_ent.flying_timer ~= 0 then
                         bumblebee.can_doublejump = true
                     end
-                end
-                if test_flag(input, WHIP) and rider.holding_uid == -1 or bumblebee.state == 5 then
-                    input = clr_flag(input, WHIP)
                 end
             end
         else
