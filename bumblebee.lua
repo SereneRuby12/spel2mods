@@ -31,7 +31,8 @@ do
     bumblebee_texture = define_texture(texture_def)
 end
 
-local prev_destroyed_bumblebees = 0 --for deleting cookedturkey when a bumblebee dies
+local prev_cooked_bumblebees = 0 --for deleting cookedturkey when a bumblebee dies
+local prev_cookedturkeys = 0
 local bumblebees = {}
 local function new_bumblebee(ent) 
     ent:set_texture(bumblebee_texture)
@@ -43,7 +44,9 @@ local function new_bumblebee(ent)
         ["rider_jumps"] = 0, --for telepack and vlads, 0 means that has jumped 0 times on air
         ["climb_frame"] = 0,
         ["not_climbing"] = true,
-        ["callb"] = -1
+        ["callb"] = -1,
+        ["last_rider_uid"] = -1,
+        ["last_holder"] = -1
     }
 end
 
@@ -87,6 +90,19 @@ local function set_bumblebees_from_previous(companions)
     end
 end
 
+local function get_holder_player(ent)
+    local holder = ent:topmost()
+    if holder == ent then
+        return nil
+    elseif holder.type.search_flags == MASK.PLAYER or holder.type.search_flags == MASK.MOUNT then
+        if holder.type.search_flags == MASK.MOUNT then --when the mount is held and the holder is mounted on another, the topmost becomes the mounted
+            messpect("holder is mount", holder.uid)
+            holder = get_entity(holder.rider_uid)
+        end
+        return holder
+    end
+end
+
 local function update_climbing(bumblebee)
     if bumblebees[bumblebee.uid] then
         messpect('update_climb')
@@ -126,30 +142,34 @@ local function is_valid_bumblebee_spawn(x, y, l)
     end
     return false
 end
+
 local bumblebee_chance = define_procedural_spawn("sample_bumblebee", spawn_bumblebee, is_valid_bumblebee_spawn)
 set_callback(function(room_gen_ctx)
     bumblebees = {}
     if (state.theme == THEME.JUNGLE) then
-        room_gen_ctx:set_procedural_spawn_chance(bumblebee_chance, 150)
+        room_gen_ctx:set_procedural_spawn_chance(bumblebee_chance, 120)
     end
 end, ON.POST_ROOM_GENERATION)
 
 set_callback(function()
-    local px, py, pl = get_position(players[1].uid)
-    local companions = get_entities_at(0, MASK.PLAYER, px, py, pl, 2)
-    set_bumblebees_from_previous(companions)
-    bumblebees_t_info = {}
-    bumblebees_t_info_hh = {}
-    
-    --bee spawn on beehives
-    local chance = 1
-    local beehives = get_entities_by(ENT_TYPE.FLOORSTYLED_BEEHIVE, MASK.ANY, LAYER.FRONT)
-    for _,uid in ipairs(beehives) do
-        if math.random() <= chance then
-            local x, y, l = get_position(uid)
-            if #get_entities_at(0, MASK.FLOOR, x, y+1, LAYER.FRONT, 0.5) == 0 then
-                spawn_bumblebee(x, y+1, l)
-                chance = chance/5
+    messpect('screen', state.screen)
+    if state.screen == 12 then
+        local px, py, pl = get_position(players[1].uid)
+        local companions = get_entities_at(0, MASK.PLAYER, px, py, pl, 2)
+        set_bumblebees_from_previous(companions)
+        bumblebees_t_info = {} 
+        bumblebees_t_info_hh = {}
+        
+        --bee spawn on beehives
+        local chance = 1
+        local beehives = get_entities_by(ENT_TYPE.FLOORSTYLED_BEEHIVE, MASK.ANY, LAYER.FRONT)
+        for _,uid in ipairs(beehives) do
+            if math.random() <= chance then
+                local x, y, l = get_position(uid)
+                if #get_entities_at(0, MASK.FLOOR, x, y+1, LAYER.FRONT, 0.5) == 0 then
+                    spawn_bumblebee(x, y+1, l)
+                    chance = chance/5
+                end
             end
         end
     end
@@ -158,11 +178,13 @@ end, ON.POST_LEVEL_GENERATION)
 set_callback(function()
     do
         local cookedturkeys = get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)
+        local cookeddiff = #cookedturkeys-prev_cookedturkeys
+        local cooked_num = math.min(cookeddiff, prev_cooked_bumblebees)
         if #cookedturkeys > 0 then
             for i = #cookedturkeys, 0, -1 do
-                if prev_destroyed_bumblebees > 0 then
+                if cooked_num > 0 then
                     get_entity(cookedturkeys[i]).y = -10
-                    prev_destroyed_bumblebees = prev_destroyed_bumblebees - 1
+                    cooked_num = cooked_num - 1
                 end
             end
         end
@@ -173,8 +195,9 @@ set_callback(function()
                 get_entity(v).y = -1000
             end
         end
+        prev_cookedturkeys = #cookedturkeys
     end
-    prev_destroyed_bumblebees = 0
+    prev_cooked_bumblebees = 0
     for uid,c_ent in pairs(bumblebees) do
         local bumblebee = get_entity(uid)
         if bumblebee then
@@ -332,9 +355,22 @@ set_callback(function()
                     end
                 end
             end
+            if test_flag(bumblebee.flags, ENT_FLAG.DEAD) and bumblebee.onfire_effect_timer > 0 then
+                prev_cooked_bumblebees = prev_cooked_bumblebees + 1
+            end
         else
             bumblebees[uid] = nil
-            prev_destroyed_bumblebees = prev_destroyed_bumblebees + 1
+        end
+    end
+    
+    if #get_entities_by_type(ENT_TYPE.FX_PORTAL) > 0 then
+        messpect('portal')
+        for uid,c_ent in pairs(bumblebees) do
+            local bumblebee = get_entity(uid)
+            if bumblebee.state ~= 24 and bumblebee.last_state ~= 24 then --24 seems to be the state when entering portal
+                c_ent.last_holder = get_holder_player(bumblebee)
+                c_ent.last_rider_uid = bumblebee.rider_uid
+            end
         end
     end
 end, ON.FRAME)
@@ -343,27 +379,32 @@ set_callback(function()
     if state.loading == 2 and state.screen_next == SCREEN.TRANSITION then
         for uid, c_ent in pairs(bumblebees) do
             local bumblebee = get_entity(uid)
-            local holder = bumblebee:topmost()
-            --messpect('bee', uid, holder.uid)
-            if bumblebee ~= holder and (holder.type.search_flags == MASK.PLAYER or holder.type.search_flags == MASK.MOUNT) then -- the bumblebee is being held, and the holder is a player
-                if holder.type.search_flags == MASK.MOUNT then --when the mount is held and the holder is mounted on another, the topmost becomes the mounted
-                    --messpect("holder is mount", holder.uid)
-                    holder = get_entity(holder.rider_uid)
-                end
-                --messpect('holding')
+            local holder, rider_uid
+            if bumblebee.state == 24 or bumblebee.last_state == 24 then
+                holder = c_ent.last_holder
+                rider_uid = c_ent.last_rider_uid
+            else
+                holder = get_holder_player(bumblebee)
+                rider_uid = bumblebee.rider_uid
+            end
+            messpect('bee', uid, holder)
+            if holder then -- the bumblebee is being held, and the holder is a player
+                messpect('holding')
                 if holder.inventory.player_slot == -1 then
-                    --messpect('hh')
+                    messpect('hh')
                     set_transition_info_hh(holder.type.id, holder.health, test_flag(holder.more_flags, ENT_MORE_FLAG.CURSED_EFFECT), holder:is_poisoned())
                 else
                     set_transition_info(holder.inventory.player_slot, false) --the bumble
                 end
-            elseif bumblebee.rider_uid ~= -1 then
-                holder = get_entity(bumblebee.rider_uid)
-                --messpect(holder.uid)
+            elseif rider_uid ~= -1 then
+                holder = get_entity(rider_uid)
+                messpect(holder.uid)
                 if holder.type.search_flags == MASK.PLAYER then
-                    --messpect('mounting')
+                    messpect('mounting')
                     set_transition_info(holder.inventory.player_slot, true)
                 end
+            else
+                messpect('nothing', bumblebee.state)
             end
         end
     end
@@ -375,11 +416,15 @@ set_callback(function()
 end, ON.TRANSITION)
 
 register_option_button("spawn", "Spawn bumblebee", function()
-    local px, py, pl = get_position(players[1].uid)
-    spawn_bumblebee(px, py, pl)
+    if players[1] then
+        local px, py, pl = get_position(players[1].uid)
+        spawn_bumblebee(px, py, pl)
+    end
 end)
 
 register_option_button("spawntamed", "Spawn tamed bumblebee", function()
-    local px, py, pl = get_position(players[1].uid)
-    get_entity(spawn_bumblebee(px, py, pl)):tame(true)
+    if players[1] then
+        local px, py, pl = get_position(players[1].uid)
+        get_entity(spawn_bumblebee(px, py, pl)):tame(true)
+    end
 end)
