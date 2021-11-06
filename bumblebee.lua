@@ -1,7 +1,7 @@
 meta = {
     name = "Bumblebee mod",
-    version = "0.7?",
-    description = "Adds bumblebees",
+    version = "1.0",
+    description = "Adds bumblebee mount",
     author = "Estebanfer"
 }
 --TODO: add the sticking to walls thing
@@ -61,11 +61,8 @@ end
 
 local function set_bumblebees_from_previous(companions)
     for i, info in ipairs(bumblebees_t_info) do
-        --messpect(info)
         for ip,p in ipairs(players) do
-            --messpect(p.inventory.player_slot, info.slot)
             if p.inventory.player_slot == info.slot then
-                --messpect('trueslot')
                 if info.mounted then
                     local bee = p:topmost_mount()
                     bumblebees[bee.uid] = new_bumblebee(bee)
@@ -77,12 +74,9 @@ local function set_bumblebees_from_previous(companions)
         end
     end
     for i, uid in ipairs(companions) do
-        --messpect(uid)
         local ent = get_entity(uid)
         for _, info in pairs(bumblebees_t_info_hh) do
-            --messpect(ent.type.id, info.e_type, ent.health, info.hp, test_flag(ent.more_flags, ENT_MORE_FLAG.CURSED_EFFECT), info.cursed, ent:is_poisoned(), info.poisoned)
             if ent.type.id == info.e_type and ent.health == info.hp and test_flag(ent.more_flags, ENT_MORE_FLAG.CURSED_EFFECT) == info.cursed and ent:is_poisoned() == info.poisoned then
-                --messpect('setBEE')
                 local bee = ent:get_held_entity()
                 bumblebees[bee.uid] = new_bumblebee(bee)
             end
@@ -96,7 +90,7 @@ local function get_holder_player(ent)
         return nil
     elseif holder.type.search_flags == MASK.PLAYER or holder.type.search_flags == MASK.MOUNT then
         if holder.type.search_flags == MASK.MOUNT then --when the mount is held and the holder is mounted on another, the topmost becomes the mounted
-            messpect("holder is mount", holder.uid)
+
             holder = get_entity(holder.rider_uid)
         end
         return holder
@@ -105,17 +99,14 @@ end
 
 local function update_climbing(bumblebee)
     if bumblebees[bumblebee.uid] then
-        messpect('update_climb')
         bumblebee.animation_frame = bumblebees[bumblebee.uid].climb_frame
     end
 end
 
 local function reset_rider_jumps(rider, backitem, backitem_type, jumps)
-    --messpect('reload jumps')
     if backitem_type == ENT_TYPE.ITEM_TELEPORTER_BACKPACK then
         backitem.teleport_number = jumps
     elseif backitem_type == ENT_TYPE.ITEM_VLADS_CAPE then
-        --messpect('vlads ', jumps)
         if jumps == 0 then
             backitem.can_double_jump = true
         end
@@ -157,7 +148,6 @@ set_callback(function(room_gen_ctx)
 end, ON.POST_ROOM_GENERATION)
 
 set_callback(function()
-    messpect('screen', state.screen)
     if state.screen == 12 then
         local px, py, pl = get_position(players[1].uid)
         local companions = get_entities_at(0, MASK.PLAYER, px, py, pl, 2)
@@ -369,7 +359,6 @@ set_callback(function()
     end
     
     if #get_entities_by_type(ENT_TYPE.FX_PORTAL) > 0 then
-        messpect('portal')
         for uid,c_ent in pairs(bumblebees) do
             local bumblebee = get_entity(uid)
             if bumblebee.state ~= 24 and bumblebee.last_state ~= 24 then --24 seems to be the state when entering portal
@@ -381,9 +370,7 @@ set_callback(function()
 end, ON.FRAME)
 
 set_callback(function()
-    messpect(state.screen, state.screen_next, state.loading)
     if state.loading == 2 and ((state.screen_next == SCREEN.TRANSITION and state.screen ~= SCREEN.SPACESHIP) or state.screen_next == SCREEN.SPACESHIP) then
-        messpect('loading', #get_entities_by_type(ENT_TYPE.MOUNT_TURKEY))
         for uid, c_ent in pairs(bumblebees) do
             local bumblebee = get_entity(uid)
             local holder, rider_uid
@@ -394,24 +381,17 @@ set_callback(function()
                 holder = get_holder_player(bumblebee)
                 rider_uid = bumblebee.rider_uid
             end
-            messpect('bee', uid, holder)
             if holder then -- the bumblebee is being held, and the holder is a player
-                messpect('holding')
                 if holder.inventory.player_slot == -1 then
-                    messpect('hh')
                     set_transition_info_hh(holder.type.id, holder.health, test_flag(holder.more_flags, ENT_MORE_FLAG.CURSED_EFFECT), holder:is_poisoned())
                 else
                     set_transition_info(holder.inventory.player_slot, false) --the bumble
                 end
             elseif rider_uid ~= -1 then
                 holder = get_entity(rider_uid)
-                messpect(holder.uid)
                 if holder.type.search_flags == MASK.PLAYER then
-                    messpect('mounting')
                     set_transition_info(holder.inventory.player_slot, true)
                 end
-            else
-                messpect('nothing', bumblebee.state)
             end
         end
     end
