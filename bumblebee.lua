@@ -128,6 +128,11 @@ local function spawn_bumblebee(x, y, l)
     return uid
 end
 
+local function spawn_bumblebee_no_return(x, y, l)
+    local uid = spawn(ENT_TYPE.MOUNT_TURKEY, x, y, l, 0, 0)
+    bumblebees[uid] = new_bumblebee(get_entity(uid))
+end
+
 --bee spawn
 local function is_valid_bumblebee_spawn(x, y, l)
     local floor = get_grid_entity_at(x, y, l)
@@ -143,7 +148,7 @@ local function is_valid_bumblebee_spawn(x, y, l)
     return false
 end
 
-local bumblebee_chance = define_procedural_spawn("sample_bumblebee", spawn_bumblebee, is_valid_bumblebee_spawn)
+local bumblebee_chance = define_procedural_spawn("sample_bumblebee", spawn_bumblebee_no_return, is_valid_bumblebee_spawn)
 set_callback(function(room_gen_ctx)
     bumblebees = {}
     if (state.theme == THEME.JUNGLE) then
@@ -376,11 +381,13 @@ set_callback(function()
 end, ON.FRAME)
 
 set_callback(function()
-    if state.loading == 2 and state.screen_next == SCREEN.TRANSITION then
+    messpect(state.screen, state.screen_next, state.loading)
+    if state.loading == 2 and ((state.screen_next == SCREEN.TRANSITION and state.screen ~= SCREEN.SPACESHIP) or state.screen_next == SCREEN.SPACESHIP) then
+        messpect('loading', #get_entities_by_type(ENT_TYPE.MOUNT_TURKEY))
         for uid, c_ent in pairs(bumblebees) do
             local bumblebee = get_entity(uid)
             local holder, rider_uid
-            if bumblebee.state == 24 or bumblebee.last_state == 24 then
+            if not bumblebee or bumblebee.state == 24 or bumblebee.last_state == 24 then
                 holder = c_ent.last_holder
                 rider_uid = c_ent.last_rider_uid
             else
