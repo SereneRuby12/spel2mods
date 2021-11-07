@@ -4,7 +4,6 @@ meta = {
     description = "Adds bumblebee mount",
     author = "Estebanfer"
 }
---TODO: add the sticking to walls thing
 local JUMP = 1
 local LEFT_DIR = 9 -- 256
 local RIGHT_DIR = 10 -- 512
@@ -23,7 +22,6 @@ local function get_blocks(floors)
     return blocks
 end
 
---fix random bug with player not being able to move after level transition while mounting bumblebee?
 local bumblebee_texture
 do
     local texture_def = get_texture_definition(TEXTURE.DATA_TEXTURES_MOUNTS_0)
@@ -31,7 +29,7 @@ do
     bumblebee_texture = define_texture(texture_def)
 end
 
-local prev_cooked_bumblebees = 0 --for deleting cookedturkey when a bumblebee dies
+local prev_destroyed_bumblebees = 0 --for deleting cookedturkey when a bumblebee dies
 local prev_cookedturkeys = 0
 local bumblebees = {}
 local function new_bumblebee(ent) 
@@ -52,7 +50,7 @@ end
 
 local bumblebees_t_info = {} --transition info
 local bumblebees_t_info_hh = {}
-local function set_transition_info(slot, mounted) --mounted if false then it's being held
+local function set_transition_info(slot, mounted) --mounted: false = being held
     table.insert(bumblebees_t_info, {["slot"] = slot, ["mounted"] = mounted})
 end
 local function set_transition_info_hh(e_type, hp, cursed, poisoned)
@@ -84,13 +82,12 @@ local function set_bumblebees_from_previous(companions)
     end
 end
 
-local function get_holder_player(ent)
+local function get_holder_player(ent) -- or hh
     local holder = ent:topmost()
     if holder == ent then
         return nil
     elseif holder.type.search_flags == MASK.PLAYER or holder.type.search_flags == MASK.MOUNT then
-        if holder.type.search_flags == MASK.MOUNT then --when the mount is held and the holder is mounted on another, the topmost becomes the mounted
-
+        if holder.type.search_flags == MASK.MOUNT then --if the topmost is a mount, that means the true holder is the one riding it
             holder = get_entity(holder.rider_uid)
         end
         return holder
@@ -171,28 +168,7 @@ set_callback(function()
 end, ON.POST_LEVEL_GENERATION)
 
 set_callback(function()
-    do
-        local cookedturkeys = get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)
-        local cookeddiff = #cookedturkeys-prev_cookedturkeys
-        local cooked_num = math.min(cookeddiff, prev_cooked_bumblebees)
-        if #cookedturkeys > 0 then
-            for i = #cookedturkeys, 0, -1 do
-                if cooked_num > 0 then
-                    get_entity(cookedturkeys[i]).y = -10
-                    cooked_num = cooked_num - 1
-                end
-            end
-        end
-        for i, v in ipairs(get_entities_by_type(ENT_TYPE.ITEM_TURKEY_NECK)) do
-            local ent = get_entity(v)
-            local from_ent = ent:topmost_mount()
-            if from_ent ~= ent and bumblebees[from_ent.uid] then
-                get_entity(v).y = -1000
-            end
-        end
-        prev_cookedturkeys = #cookedturkeys
-    end
-    prev_cooked_bumblebees = 0
+    
     for uid,c_ent in pairs(bumblebees) do
         local bumblebee = get_entity(uid)
         if bumblebee then
@@ -232,7 +208,9 @@ set_callback(function()
                         if backitem then
                             reset_rider_jumps(rider, backitem, backitem.type.id, c_ent.rider_jumps)
                         end
-                        bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                        if bumblebee:topmost().type.id ~= ENT_TYPE.FLOOR_PIPE then
+                            bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                        end
                     end
                     local y = 0
                     
@@ -300,7 +278,9 @@ set_callback(function()
                 elseif not c_ent.not_climbing then
                     clear_entity_callback(uid, c_ent.callb)
                     bumblebee.angle = 0
-                    bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                    if bumblebee:topmost().type.id ~= ENT_TYPE.FLOOR_PIPE then
+                        bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
+                    end
                     c_ent.not_climbing = true
                 end
                 if test_flag(input, JUMP) then
@@ -333,13 +313,12 @@ set_callback(function()
                             end
                         else
                             if (backitem_uid ~= -1) then
-                                local backitem = get_entity(backitem_uid) --ITEM_TELEPORTER_BACKPACK
+                                local backitem = get_entity(backitem_uid)
                                 if backitem.type.id == ENT_TYPE.ITEM_HOVERPACK then
                                     backitem.is_on = false
                                 end
                             end
                             bumblebee.flags = clr_flag(bumblebee.flags, ENT_FLAG.NO_GRAVITY)
-                            --bumblebee.can_doublejump = true
                         end
                     end
                     c_ent.rider_jumped = true
@@ -350,14 +329,34 @@ set_callback(function()
                     end
                 end
             end
-            if test_flag(bumblebee.flags, ENT_FLAG.DEAD) and bumblebee.onfire_effect_timer > 0 then
-                prev_cooked_bumblebees = prev_cooked_bumblebees + 1
-            end
         else
+            prev_destroyed_bumblebees = prev_destroyed_bumblebees + 1
             bumblebees[uid] = nil
         end
     end
-    
+    do
+        local cookedturkeys = get_entities_by_type(ENT_TYPE.ITEM_PICKUP_COOKEDTURKEY)
+        local cookeddiff = #cookedturkeys-prev_cookedturkeys
+        local cooked_num = math.min(cookeddiff, prev_destroyed_bumblebees)
+        if #cookedturkeys > 0 then
+            for i = #cookedturkeys, 0, -1 do
+                if cooked_num > 0 then
+                    get_entity(cookedturkeys[i]).y = -10
+                    cooked_num = cooked_num - 1
+                end
+            end
+        end
+        for i, v in ipairs(get_entities_by_type(ENT_TYPE.ITEM_TURKEY_NECK)) do
+            local ent = get_entity(v)
+            local from_ent = ent:topmost_mount()
+            if from_ent ~= ent and bumblebees[from_ent.uid] then
+                get_entity(v).y = -1000
+            end
+        end
+        prev_cookedturkeys = #cookedturkeys
+    end
+    prev_destroyed_bumblebees = 0
+
     if #get_entities_by_type(ENT_TYPE.FX_PORTAL) > 0 then
         for uid,c_ent in pairs(bumblebees) do
             local bumblebee = get_entity(uid)
@@ -381,7 +380,7 @@ set_callback(function()
                 holder = get_holder_player(bumblebee)
                 rider_uid = bumblebee.rider_uid
             end
-            if holder then -- the bumblebee is being held, and the holder is a player
+            if holder then
                 if holder.inventory.player_slot == -1 then
                     set_transition_info_hh(holder.type.id, holder.health, test_flag(holder.more_flags, ENT_MORE_FLAG.CURSED_EFFECT), holder:is_poisoned())
                 else
