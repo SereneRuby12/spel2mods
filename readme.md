@@ -1,4 +1,4 @@
-To use any tilecode there you have to use ```require "<file_name>"``` (no need of including .lua at the end).
+To use any tilecode there you have to use ```require "<path_to_file>"``` (no need of including .lua at the end).
 
 To use the zones tilecodes you must also use the req_zone function, you can use a table to require multiple zones.
 
@@ -8,8 +8,10 @@ I would recommend using the require on the main.lua (or maybe a make a custom_ti
 
 ### Example
 ```lua
-require "bubble_block"
-local zones = require "zones"
+--Asumming you have a folder in your mod named CustomTilecodes with all the custom tilecode files you want to use
+require "CustomTilecodes/bubble_block"
+require "CustomTilecodes/invis_bubble_block"
+local zones = require "CustomTilecodes/zones"
 zones.req_zone({
     "death_zone",
     "cure_zone",
