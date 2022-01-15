@@ -1,0 +1,4 @@
+- poison entity at [direction]
+- curse entity at [direction]
+- one way block (not smoke)
+- triggers system? (different things that trigger a signal of a number, and things that get triggered with that signal)
