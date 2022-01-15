@@ -1,10 +1,10 @@
-to use any tilecode there (except zones) you only have to do ```require "<file_name>"```, no need of including .lua at the end.
+To use any tilecode there you have to use ```require "<file_name>"``` (no need of including .lua at the end).
 
-To use the zones tilecodes you must require it and then use the req_zone function, you can use a table to require multiple zones.
+To use the zones tilecodes you must also use the req_zone function, you can use a table to require multiple zones.
 
 You can use any number for the poison zone, and it will work.
 
-I would recommend using the require on the main.lua
+I would recommend using the require on the main.lua (or maybe a make a custom_tilecodes.lua and require it on the main.lua if you want to have a different file for the requires).
 
 ### Example
 ```lua
