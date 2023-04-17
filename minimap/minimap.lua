@@ -58,11 +58,14 @@ end
 
 local detected_entities = {}
 local map = {}
-local explored_floor = {}
+local explored_floor_front = {}
+local explored_floor_back = {}
 for y = 0, 126 do
   map[y] = {}
-  explored_floor[y] = {}
+  explored_floor_front[y] = {}
+  explored_floor_back[y] = {}
 end
+local explored_floor = explored_floor_front
 
 ---@return integer left
 ---@return integer top
@@ -95,8 +98,10 @@ set_callback(function()
     map = {}
     for y = 0, 126 do
       map[y] = {}
-      explored_floor[y] = {}
+      explored_floor_front[y] = {}
+      explored_floor_back[y] = {}
     end
+    explored_floor = explored_floor_front
   end
 end, ON.PRE_LOAD_SCREEN)
 
@@ -105,6 +110,7 @@ set_callback(function()
     map_alpha = options.map_alpha
     update_tile_colors()
   end
+  explored_floor = state.camera_layer == LAYER.FRONT and explored_floor_front or explored_floor_back
   local vision_rect = AABB:new(get_camera_bounds_grid())
   for x = vision_rect.left, vision_rect.right do
     for y = vision_rect.top, vision_rect.bottom, -1 do
