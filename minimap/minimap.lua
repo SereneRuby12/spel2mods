@@ -116,8 +116,10 @@ set_callback(function()
   local remainder_max_y = 120 - max_y
   for x = vision_rect.left, vision_rect.right do
     for y = vision_rect.top, vision_rect.bottom, -1 do
+      if state.theme == THEME.COSMIC_OCEAN then
+        x, y = ((x - 3) % max_x) + 3, ((y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
+      end
       if is_valid_grid_coord(x, y) then
-        explored_floor[((y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y][((x - 3) % max_x) + 3] = true
         explored_floor[y][x] = true
       end
     end
@@ -127,7 +129,9 @@ set_callback(function()
   for x = -map_size, map_size do
     for y = map_size, -map_size, -1 do
       local grid_x, grid_y = math.floor(cam_x+x+0.5), math.floor(cam_y+y+0.5)
-      grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
+      if state.theme == THEME.COSMIC_OCEAN then
+        grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
+      end
       if is_valid_grid_coord(grid_x, grid_y) then
         if explored_floor[grid_y][grid_x] then
           local uid = get_grid_entity_at(grid_x, grid_y, state.camera_layer)
@@ -180,6 +184,7 @@ set_callback(function (ctx)
     end)
   end
   if map_screen_size == math.huge then return end -- Prevent infinity error
+  --render map
   local size_x, size_y = map_screen_size, (map_screen_size * 16) / 9
   local cam_x, cam_y = math.floor(state.camera.calculated_focus_x+.5), math.floor(state.camera.calculated_focus_y+.5)
   local rect = AABB:new(.0, .0, .0, .0) -- Using one AABB variable for better performance
@@ -192,7 +197,9 @@ set_callback(function (ctx)
     local render_y = .0
     for y = map_size, -map_size, -1 do
       local grid_x, grid_y = cam_x+x, cam_y+y
-      grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
+      if state.theme == THEME.COSMIC_OCEAN then
+        grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
+      end
       if explored_floor[grid_y] and explored_floor[grid_y][grid_x] then
         local color = get_tile_color(map[grid_y] and map[grid_y][grid_x])
         rect.left, rect.top, rect.right, rect.bottom = render_x, render_y, render_x+sq_size_x, render_y-sq_size_y
