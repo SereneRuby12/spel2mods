@@ -60,7 +60,7 @@ local detected_entities = {}
 local map = {}
 local explored_floor_front = {}
 local explored_floor_back = {}
-for y = 0, 126 do
+for y = 0, CONST.MAX_TILES_VERT do
   map[y] = {}
   explored_floor_front[y] = {}
   explored_floor_back[y] = {}
@@ -96,7 +96,7 @@ set_callback(function()
   then
     explored_floor = {}
     map = {}
-    for y = 0, 126 do
+    for y = 0, CONST.MAX_TILES_VERT do
       map[y] = {}
       explored_floor_front[y] = {}
       explored_floor_back[y] = {}
@@ -112,9 +112,12 @@ set_callback(function()
   end
   explored_floor = state.camera_layer == LAYER.FRONT and explored_floor_front or explored_floor_back
   local vision_rect = AABB:new(get_camera_bounds_grid())
+  local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
+  local remainder_max_y = 120 - max_y
   for x = vision_rect.left, vision_rect.right do
     for y = vision_rect.top, vision_rect.bottom, -1 do
       if is_valid_grid_coord(x, y) then
+        explored_floor[((y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y][((x - 3) % max_x) + 3] = true
         explored_floor[y][x] = true
       end
     end
@@ -124,6 +127,7 @@ set_callback(function()
   for x = -map_size, map_size do
     for y = map_size, -map_size, -1 do
       local grid_x, grid_y = math.floor(cam_x+x+0.5), math.floor(cam_y+y+0.5)
+      grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       if is_valid_grid_coord(grid_x, grid_y) then
         if explored_floor[grid_y][grid_x] then
           local uid = get_grid_entity_at(grid_x, grid_y, state.camera_layer)
@@ -182,10 +186,13 @@ set_callback(function (ctx)
   local sq_size_y = (size_y / (map_size * 2 + 1))
   local sq_size_x = (size_x / (map_size * 2 + 1))
   local render_x = .0
+  local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
+  local remainder_max_y = 120 - max_y
   for x = -map_size, map_size do
     local render_y = .0
     for y = map_size, -map_size, -1 do
       local grid_x, grid_y = cam_x+x, cam_y+y
+      grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       if explored_floor[grid_y] and explored_floor[grid_y][grid_x] then
         local color = get_tile_color(map[grid_y] and map[grid_y][grid_x])
         rect.left, rect.top, rect.right, rect.bottom = render_x, render_y, render_x+sq_size_x, render_y-sq_size_y
