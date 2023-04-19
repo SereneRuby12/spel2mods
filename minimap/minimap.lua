@@ -66,27 +66,27 @@ local function is_valid_grid_coord(x, y)
   return x >= 0 and x < CONST.MAX_TILES_HORIZ and y >= 0 and y < CONST.MAX_TILES_VERT
 end
 
+local last_time = -1
+
 set_callback(function()
-  if (state.screen_next == SCREEN.TRANSITION and state.screen ~= SCREEN.SPACESHIP)
-      or state.screen_next == SCREEN.SPACESHIP
-      or (state.screen ~= SCREEN.OPTIONS and state.screen_next == SCREEN.LEVEL)
-  then
+    last_time = -1
     map = {}
     draw_map = {}
     for y = 0, CONST.MAX_TILES_VERT do
       map_front[y] = {}
       map_back[y] = {}
     end
-  end
-end, ON.PRE_LOAD_SCREEN)
+end, ON.POST_LEVEL_GENERATION)
 
 set_callback(function()
   if map_alpha ~= options.map_alpha then
     map_alpha = options.map_alpha
     update_tile_colors()
   end
+  local state = get_local_state()
   map = state.camera_layer == LAYER.FRONT and map_back or map_front
-  if get_frame() % options.refresh_modulo > 0 then return end
+  if get_frame() % options.refresh_modulo > 0 or state.screen ~= SCREEN.LEVEL or state.time_startup == last_time or state.pause ~= 0 then return end
+  last_time = state.time_startup
   local vision_rect = AABB:new(get_camera_bounds_grid())
   local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
   local remainder_max_y = 120 - max_y
@@ -108,8 +108,6 @@ set_callback(function()
         else
           map[y][x] = TILE_TYPE.NON_SOLID
         end
-      elseif x >= 0 then
-        map[y][x] = TILE_TYPE.UNEXPLORED
       end
     end
   end
@@ -135,14 +133,14 @@ set_callback(function()
   local last_draw_map_index = 1
   for x = -map_size, map_size do
     local forming_column_start_y = 0
-    local forming_column_tile = -1
+    local forming_column_tile = nil
     for y = map_size, -map_size, -1 do
       local grid_x, grid_y = math.floor(cam_x+x+0.5), math.floor(cam_y+y+0.5)
       if state.theme == THEME.COSMIC_OCEAN then
         grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       end
       if map[grid_y] and forming_column_tile ~= map[grid_y][grid_x] then
-        if forming_column_tile ~= -1 then
+        if forming_column_tile ~= nil then
           draw_map[last_draw_map_index] = {x = x+map_size, y = forming_column_start_y-map_size, last_y = y-map_size, tile = forming_column_tile}
           last_draw_map_index = last_draw_map_index + 1
         end
@@ -150,10 +148,12 @@ set_callback(function()
         forming_column_tile = map[grid_y] and map[grid_y][grid_x]
       end
     end
-    draw_map[last_draw_map_index] = {x = x+map_size, y = forming_column_start_y-map_size, last_y = -map_size*2, tile = forming_column_tile}
-    last_draw_map_index = last_draw_map_index + 1
+    if forming_column_tile ~= nil then
+      draw_map[last_draw_map_index] = {x = x+map_size, y = forming_column_start_y-map_size, last_y = -map_size*2, tile = forming_column_tile}
+      last_draw_map_index = last_draw_map_index + 1
+    end
   end
-end, ON.GAMEFRAME)
+end, ON.GUIFRAME)
 
 ---@param ctx GuiDrawContext
 set_callback(function (ctx)
@@ -164,7 +164,7 @@ set_callback(function (ctx)
       map_screen_size = size.x
     end)
   end
-  if map_screen_size == math.huge then return end -- Prevent infinity error
+  if map_screen_size == math.huge or state.screen ~= SCREEN.LEVEL then return end -- Prevent infinity error
   --render map
   local size_x, size_y = map_screen_size, (map_screen_size * 16) / 9
   local rect = AABB:new(.0, .0, .0, .0) -- Using one AABB variable for better performance
