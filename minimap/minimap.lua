@@ -42,26 +42,6 @@ local function get_tile_color(tile_type)
   end
 end
 
--- local function get_tile_color_old(tile_type)
---   if tile_type == TILE_TYPE.UNEXPLORED then
---     return rgba(50, 50, 50, map_alpha)
---   elseif tile_type == TILE_TYPE.AIR then
---     return rgba(100, 100, 100, map_alpha)
---   elseif tile_type == TILE_TYPE.SOLID then
---     return rgba(255, 255, 255, map_alpha)
---   elseif tile_type == TILE_TYPE.NON_SOLID then
---     return rgba(200, 200, 200, map_alpha)
---   elseif tile_type == TILE_TYPE.ENTRANCE then
---     return rgba(255, 0, 0, map_alpha)
---   elseif tile_type == TILE_TYPE.EXIT then
---     return rgba(0, 255, 0, map_alpha)
---   elseif tile_type == TILE_TYPE.CO_ORB then
---     return rgba(200, 0, 200, map_alpha)
---   else
---     return rgba(0, 0, 0, 0)
---   end
--- end
-
 local map_front = {}
 local map_back = {}
 local draw_map = {}
@@ -76,13 +56,6 @@ local map = map_front
 ---@return integer right
 ---@return integer bottom
 local function get_camera_bounds_grid()
-  -- local width_zoom_factor <const> = 1.47276954
-  -- local height_zoom_factor <const> = 0.82850041
-  -- local half_cam_width = (get_zoom_level() * width_zoom_factor / 2.)
-  -- local half_cam_height = (get_zoom_level() * height_zoom_factor / 2.)
-  -- local cam_x, cam_y = state.camera.calculated_focus_x, state.camera.calculated_focus_y
-  -- local left, top = math.floor(cam_x - half_cam_width + .5), math.floor(cam_y + half_cam_height + .5)
-  -- local right, bottom = math.floor(cam_x + half_cam_width + .5), math.floor(cam_y - half_cam_height + .5)
   local left, top = game_position(-1, 1)
   local right, bottom = game_position(1, -1)
   left, top, right, bottom = math.floor(left+.5), math.floor(top+.5), math.floor(right+.5), math.floor(bottom+.5)
@@ -194,11 +167,9 @@ set_callback(function (ctx)
   if map_screen_size == math.huge then return end -- Prevent infinity error
   --render map
   local size_x, size_y = map_screen_size, (map_screen_size * 16) / 9
-  local cam_x, cam_y = math.floor(state.camera.calculated_focus_x+.5), math.floor(state.camera.calculated_focus_y+.5)
   local rect = AABB:new(.0, .0, .0, .0) -- Using one AABB variable for better performance
   local sq_size_y = (size_y / (map_size * 2 + 1))
   local sq_size_x = (size_x / (map_size * 2 + 1))
-  local render_x = .0
   for _, line in pairs(draw_map) do
     local color = get_tile_color(line.tile)
     rect.left, rect.top, rect.right, rect.bottom = line.x*sq_size_x, line.y*sq_size_y, line.x*sq_size_x+sq_size_x, line.last_y*sq_size_y
