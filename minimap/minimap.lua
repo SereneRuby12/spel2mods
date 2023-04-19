@@ -2,7 +2,13 @@ local map_screen_x, map_screen_y = .0, .0
 local map_screen_size = .0, .0
 local map_size <const> = 25
 local map_alpha = 150
+
+local window_open = true
 register_option_int("map_alpha", "Map Opacity", "", 120, 1, 255)
+register_option_int("refresh_modulo", "Refresh map 1/x of the frames", "Try increasing to 2-4 if you have performance issues", 1, 1, 10)
+register_option_button("open_window", "Move map", "Open a window that allows to move the map position and change size. You can close it after editing it", function ()
+	window_open = true
+end)
 local TILE_TYPE = {
   UNEXPLORED = 0,
   AIR = 1,
@@ -56,16 +62,14 @@ end
 --   end
 -- end
 
-local detected_entities = {}
-local map = {}
-local explored_floor_front = {}
-local explored_floor_back = {}
+local map_front = {}
+local map_back = {}
+local draw_map = {}
 for y = 0, CONST.MAX_TILES_VERT do
-  map[y] = {}
-  explored_floor_front[y] = {}
-  explored_floor_back[y] = {}
+  map_front[y] = {}
+  map_back[y] = {}
 end
-local explored_floor = explored_floor_front
+local map = map_front
 
 ---@return integer left
 ---@return integer top
@@ -94,14 +98,12 @@ set_callback(function()
       or state.screen_next == SCREEN.SPACESHIP
       or (state.screen ~= SCREEN.OPTIONS and state.screen_next == SCREEN.LEVEL)
   then
-    explored_floor = {}
     map = {}
+    draw_map = {}
     for y = 0, CONST.MAX_TILES_VERT do
-      map[y] = {}
-      explored_floor_front[y] = {}
-      explored_floor_back[y] = {}
+      map_front[y] = {}
+      map_back[y] = {}
     end
-    explored_floor = explored_floor_front
   end
 end, ON.PRE_LOAD_SCREEN)
 
@@ -110,7 +112,8 @@ set_callback(function()
     map_alpha = options.map_alpha
     update_tile_colors()
   end
-  explored_floor = state.camera_layer == LAYER.FRONT and explored_floor_front or explored_floor_back
+  map = state.camera_layer == LAYER.FRONT and map_back or map_front
+  if get_frame() % options.refresh_modulo > 0 then return end
   local vision_rect = AABB:new(get_camera_bounds_grid())
   local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
   local remainder_max_y = 120 - max_y
@@ -120,43 +123,29 @@ set_callback(function()
         x, y = ((x - 3) % max_x) + 3, ((y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       end
       if is_valid_grid_coord(x, y) then
-        explored_floor[y][x] = true
+        local uid = get_grid_entity_at(x, y, state.camera_layer)
+        if uid == -1 then
+          map[y][x] = TILE_TYPE.AIR
+        elseif test_flag(get_entity_flags(uid), ENT_FLAG.SOLID) then
+          map[y][x] = TILE_TYPE.SOLID
+        elseif get_entity_type(uid) == ENT_TYPE.FLOOR_DOOR_EXIT then
+          map[y][x] = TILE_TYPE.EXIT
+        elseif get_entity_type(uid) == ENT_TYPE.FLOOR_DOOR_ENTRANCE then
+          map[y][x] = TILE_TYPE.ENTRANCE
+        else
+          map[y][x] = TILE_TYPE.NON_SOLID
+        end
+      elseif x >= 0 then
+        map[y][x] = TILE_TYPE.UNEXPLORED
       end
     end
   end
 
-  local cam_x, cam_y = math.floor(state.camera.calculated_focus_x+.5), math.floor(state.camera.calculated_focus_y+.5)
-  for x = -map_size, map_size do
-    for y = map_size, -map_size, -1 do
-      local grid_x, grid_y = math.floor(cam_x+x+0.5), math.floor(cam_y+y+0.5)
-      if state.theme == THEME.COSMIC_OCEAN then
-        grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
-      end
-      if is_valid_grid_coord(grid_x, grid_y) then
-        if explored_floor[grid_y][grid_x] then
-          local uid = get_grid_entity_at(grid_x, grid_y, state.camera_layer)
-          if uid == -1 then
-            map[grid_y][grid_x] = TILE_TYPE.AIR
-          elseif test_flag(get_entity_flags(uid), ENT_FLAG.SOLID) then
-            map[grid_y][grid_x] = TILE_TYPE.SOLID
-          elseif get_entity_type(uid) == ENT_TYPE.FLOOR_DOOR_EXIT then
-            map[grid_y][grid_x] = TILE_TYPE.EXIT
-          elseif get_entity_type(uid) == ENT_TYPE.FLOOR_DOOR_ENTRANCE then
-            map[grid_y][grid_x] = TILE_TYPE.ENTRANCE
-          else
-            map[grid_y][grid_x] = TILE_TYPE.NON_SOLID
-          end
-        elseif grid_x >= 0 then
-          map[grid_y][grid_x] = TILE_TYPE.UNEXPLORED
-        end
-      end
-    end
-  end
   local orbs = get_entities_by(ENT_TYPE.ITEM_FLOATING_ORB, MASK.ITEM, LAYER.FRONT)
   for _, uid in pairs(orbs) do
     local x, y = get_position(uid)
     x, y = math.floor(x+.5), math.floor(y+.5)
-    if explored_floor[y] and explored_floor[y][x] then
+    if map[y] and map[y][x] then
       map[y][x] = TILE_TYPE.CO_ORB
     end
   end
@@ -168,12 +157,31 @@ set_callback(function()
       map[y][x] = TILE_TYPE.PLAYER
     end
   end
+  local cam_x, cam_y = math.floor(state.camera.calculated_focus_x+.5), math.floor(state.camera.calculated_focus_y+.5)
+  draw_map = {}
+  local last_draw_map_index = 1
+  for x = -map_size, map_size do
+    local forming_column_start_y = 0
+    local forming_column_tile = -1
+    for y = map_size, -map_size, -1 do
+      local grid_x, grid_y = math.floor(cam_x+x+0.5), math.floor(cam_y+y+0.5)
+      if state.theme == THEME.COSMIC_OCEAN then
+        grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
+      end
+      if map[grid_y] and forming_column_tile ~= map[grid_y][grid_x] then
+        if forming_column_tile ~= -1 then
+          draw_map[last_draw_map_index] = {x = x+map_size, y = forming_column_start_y-map_size, last_y = y-map_size, tile = forming_column_tile}
+          last_draw_map_index = last_draw_map_index + 1
+        end
+        forming_column_start_y = y
+        forming_column_tile = map[grid_y] and map[grid_y][grid_x]
+      end
+    end
+    draw_map[last_draw_map_index] = {x = x+map_size, y = forming_column_start_y-map_size, last_y = -map_size*2, tile = forming_column_tile}
+    last_draw_map_index = last_draw_map_index + 1
+  end
 end, ON.GAMEFRAME)
 
-local window_open = true
-register_option_button("open_window", "Move map", "Open a window that allows to move the map position and change size. You can close it after editing it", function ()
-	window_open = true
-end)
 ---@param ctx GuiDrawContext
 set_callback(function (ctx)
   if window_open then
@@ -191,24 +199,11 @@ set_callback(function (ctx)
   local sq_size_y = (size_y / (map_size * 2 + 1))
   local sq_size_x = (size_x / (map_size * 2 + 1))
   local render_x = .0
-  local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
-  local remainder_max_y = 120 - max_y
-  for x = -map_size, map_size do
-    local render_y = .0
-    for y = map_size, -map_size, -1 do
-      local grid_x, grid_y = cam_x+x, cam_y+y
-      if state.theme == THEME.COSMIC_OCEAN then
-        grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
-      end
-      if explored_floor[grid_y] and explored_floor[grid_y][grid_x] then
-        local color = get_tile_color(map[grid_y] and map[grid_y][grid_x])
-        rect.left, rect.top, rect.right, rect.bottom = render_x, render_y, render_x+sq_size_x, render_y-sq_size_y
-        rect:offset(map_screen_x, map_screen_y)
-        ctx:draw_rect_filled(rect, 0, color)
-      end
-      render_y = render_y - sq_size_y
-    end
-    render_x = render_x + sq_size_x
+  for _, line in pairs(draw_map) do
+    local color = get_tile_color(line.tile)
+    rect.left, rect.top, rect.right, rect.bottom = line.x*sq_size_x, line.y*sq_size_y, line.x*sq_size_x+sq_size_x, line.last_y*sq_size_y
+    rect:offset(map_screen_x, map_screen_y)
+    ctx:draw_rect_filled(rect, 0, color)
   end
   ctx:draw_rect(AABB:new(map_screen_x, map_screen_y, map_screen_x+size_x, map_screen_y-size_y), 1, 0, 0xffffffff)
 end, ON.GUIFRAME)
