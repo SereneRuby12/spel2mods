@@ -1,6 +1,6 @@
 local map_screen_x, map_screen_y = .0, .0
-local map_screen_size = .0, .0
-local map_size <const> = 25
+local map_screen_size = .0
+local map_size = 25
 local map_alpha = 150
 
 local window_open = true
@@ -132,7 +132,7 @@ set_callback(function()
     map_alpha = options.map_alpha
     update_tile_colors()
   end
-  local state = get_local_state()
+  local state = get_local_state() --[[@as StateMemory]]
   map = state.camera_layer == LAYER.FRONT and map_front or map_back
   if get_frame() % options.refresh_modulo > 0 or state.screen ~= SCREEN.LEVEL or state.time_startup == last_time or state.pause ~= 0 then return end
   last_time = state.time_startup
