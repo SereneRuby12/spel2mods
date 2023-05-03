@@ -6,8 +6,6 @@ meta = {
   version = "0.8",
 }
 
-local map_screen_x, map_screen_y = .0, .0
-local map_screen_size = .0
 local map_size_x, map_size_y = 25, 25
 local map_alpha = 150
 
@@ -89,8 +87,6 @@ set_callback(function(load_ctx)
       options[key] = def_val
     end
   end
-  map_screen_x, map_screen_y = options.window_info.x, options.window_info.y
-  map_screen_size = options.window_info.w
 end, ON.LOAD)
 -- register_option_callback("", false, function (draw_ctx)
 --   options.map_alpha = draw_ctx:win_slider_int("map_type", options.map_alpha, 1, 255)
@@ -298,12 +294,10 @@ end, ON.GUIFRAME)
 
 ---@param ctx GuiDrawContext
 set_callback(function (ctx)
+  local win = options.window_info
   if options.window_open then
-    local win = options.window_info
     ---@param ctx GuiDrawContext
-    options.window_open = ctx:window("Map", win.x, win.y, win.w, win.h, true, function(ctx, pos, size)
-      map_screen_x, map_screen_y = pos.x, pos.y
-      map_screen_size = size.x
+    options.window_open = ctx:window("Move map", win.x, win.y, win.w, win.h, true, function(ctx, pos, size)
       win.x, win.y, win.w, win.h = pos.x, pos.y, size.x, size.y
     end)
   end
@@ -311,20 +305,20 @@ set_callback(function (ctx)
     map_size_x = options.map_size_x
     map_size_y = options.map_size_y
   end
-  if map_screen_size == math.huge or state.screen ~= SCREEN.LEVEL then return end -- Prevent infinity error
+  if win.w == math.huge or state.screen ~= SCREEN.LEVEL then return end -- Prevent infinity error
   --render map
-  local size_x, size_y = map_screen_size, (map_screen_size * 16) / 9
+  local size_x, size_y = win.w, (win.w * 16) / 9
   local rect = AABB:new(.0, .0, .0, .0) -- Using one AABB variable for better performance
   local sq_size_y = (size_y / (map_size_x * 2 + 1))
   local sq_size_x = (size_x / (map_size_x * 2 + 1))
   for _, line in pairs(draw_map) do
     local color = get_tile_color(line.tile)
     rect.left, rect.top, rect.right, rect.bottom = line.x*sq_size_x, line.y*sq_size_y, line.x*sq_size_x+sq_size_x, line.last_y*sq_size_y
-    rect:offset(map_screen_x, map_screen_y)
+    rect:offset(win.x, win.y)
     ctx:draw_rect_filled(rect, 0, color)
   end
   if options.draw_border then
-    local bottom_pos = map_screen_y - (sq_size_y * map_size_y*2)
-    ctx:draw_rect(AABB:new(map_screen_x, map_screen_y, map_screen_x+size_x, bottom_pos), 1, 0, border_color)
+    local bottom_pos = win.y - (sq_size_y * map_size_y*2)
+    ctx:draw_rect(AABB:new(win.x, win.y, win.x+size_x, bottom_pos), 1, 0, border_color)
   end
 end, ON.GUIFRAME)
