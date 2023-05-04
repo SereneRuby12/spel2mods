@@ -4,6 +4,7 @@ meta = {
   name = "Mini Map",
   description = "Adds a simple mini map",
   version = "0.8",
+  online_safe = true
 }
 
 local map_size_x, map_size_y = 25, 25
@@ -180,9 +181,10 @@ set_callback(function()
   last_time = -1
   map = {}
   draw_map = {}
+  local local_state = get_local_state() --[[@as StateMemory]]
   if options.map_type == MAP_TYPE.FULL_MAP then
-    map_size_x = math.floor(((state.width * CONST.ROOM_WIDTH + 6) + 0.5) / 2)
-    map_size_y = math.floor(((state.height * CONST.ROOM_HEIGHT + 6) + 0.5) / 2)
+    map_size_x = math.floor(((local_state.width * CONST.ROOM_WIDTH + 6) + 0.5) / 2)
+    map_size_y = math.floor(((local_state.height * CONST.ROOM_HEIGHT + 6) + 0.5) / 2)
   elseif options.map_type == MAP_TYPE.FOLLOW_PLAYER then
     map_size_x = options.map_size_x
     map_size_y = options.map_size_y
@@ -194,15 +196,16 @@ set_callback(function()
 end, ON.POST_LEVEL_GENERATION)
 
 local function update_map(local_map, left, top, right, bottom)
-  local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
+  local local_state = get_local_state() --[[@as StateMemory]]
+  local max_x, max_y = local_state.width * CONST.ROOM_WIDTH, local_state.height * CONST.ROOM_HEIGHT
   local remainder_max_y = 120 - max_y
   for x = left, right do
     for y = top, bottom, -1 do
-      if state.theme == THEME.COSMIC_OCEAN then
+      if local_state.theme == THEME.COSMIC_OCEAN then
         x, y = ((x - 3) % max_x) + 3, ((y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       end
       if is_valid_grid_coord(x, y) then
-        local uid = get_grid_entity_at(x, y, state.camera_layer)
+        local uid = get_grid_entity_at(x, y, local_state.camera_layer)
         if uid == -1 then
           local_map[y][x] = TILE_TYPE.AIR
         elseif test_flag(get_entity_flags(uid), ENT_FLAG.SOLID) then
@@ -224,15 +227,17 @@ set_callback(function()
     map_alpha = options.map_alpha
     update_tile_colors()
   end
-  local state = get_local_state() --[[@as StateMemory]]
-  map = state.camera_layer == LAYER.FRONT and map_front or map_back
-  if get_frame() % options.refresh_modulo > 0 or state.screen ~= SCREEN.LEVEL or state.time_startup == last_time or state.pause ~= 0 then return end
-  last_time = state.time_startup
+  local local_state = get_local_state() --[[@as StateMemory]]
+  map = local_state.camera_layer == LAYER.FRONT and map_front or map_back
+
+  if get_frame() % options.refresh_modulo > 0 or local_state.screen ~= SCREEN.LEVEL or local_state.time_startup == last_time or local_state.pause ~= 0 then return end
+
+  last_time = local_state.time_startup
   update_map(map, get_camera_bounds_grid())
   if options.all_players then
     local players = get_local_players()
     for _, p in pairs(players) do
-      if p.health > 0 and p.uid ~= state.camera.focused_entity_uid then
+      if p.health > 0 and p.uid ~= local_state.camera.focused_entity_uid then
         local x, y = get_position(p.uid)
         local layer_map = p.layer == LAYER.FRONT and map_front or map_back
         update_map(layer_map, get_camera_bounds_grid_pos(x, y))
@@ -248,7 +253,7 @@ set_callback(function()
       map[y][x] = TILE_TYPE.CO_ORB
     end
   end
-  local focused_uid = state.camera.focused_entity_uid
+  local focused_uid = local_state.camera.focused_entity_uid
   if focused_uid ~= -1 then
     local x, y = get_position(focused_uid)
     x, y = math.floor(x+.5), math.floor(y+.5)
@@ -256,11 +261,11 @@ set_callback(function()
       map[y][x] = TILE_TYPE.PLAYER
     end
   end
-  local max_x, max_y = state.width * CONST.ROOM_WIDTH, state.height * CONST.ROOM_HEIGHT
+  local max_x, max_y = local_state.width * CONST.ROOM_WIDTH, local_state.height * CONST.ROOM_HEIGHT
   local remainder_max_y = 120 - max_y
   local cam_x, cam_y
   if options.map_type == MAP_TYPE.FOLLOW_PLAYER then
-    cam_x, cam_y = math.floor(state.camera.calculated_focus_x+.5), math.floor(state.camera.calculated_focus_y+.5)
+    cam_x, cam_y = math.floor(local_state.camera.calculated_focus_x+.5), math.floor(local_state.camera.calculated_focus_y+.5)
   elseif options.map_type == MAP_TYPE.FULL_MAP then
     local left, top, right, bottom = get_bounds()
     cam_x, cam_y = math.floor((left + right) / 2), math.floor((top + bottom) / 2)
@@ -272,7 +277,7 @@ set_callback(function()
     local forming_column_tile = nil
     for y = map_size_y, -map_size_y, -1 do
       local grid_x, grid_y = cam_x+x, cam_y+y
-      if state.theme == THEME.COSMIC_OCEAN then
+      if local_state.theme == THEME.COSMIC_OCEAN then
         grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       end
       if map[grid_y] and forming_column_tile ~= map[grid_y][grid_x] then
@@ -305,7 +310,8 @@ set_callback(function (ctx)
     map_size_x = options.map_size_x
     map_size_y = options.map_size_y
   end
-  if win.w == math.huge or state.screen ~= SCREEN.LEVEL then return end -- Prevent infinity error
+  local local_state = get_local_state() --[[@as StateMemory]]
+  if win.w == math.huge or local_state.screen ~= SCREEN.LEVEL then return end -- Prevent infinity error
   --render map
   local size_x, size_y = win.w, (win.w * 16) / 9
   local rect = AABB:new(.0, .0, .0, .0) -- Using one AABB variable for better performance
