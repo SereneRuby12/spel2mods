@@ -2,7 +2,7 @@
 meta = {
   author = "Estebanfer",
   name = "Mini Map",
-  description = "Adds a simple mini map",
+  description = "Adds a simple mini map. Hold the interact (door) button to toggle minimap visibility",
   version = "0.8",
   online_safe = true
 }
