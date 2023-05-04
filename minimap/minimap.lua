@@ -195,7 +195,7 @@ set_callback(function()
   end
 end, ON.POST_LEVEL_GENERATION)
 
-local function update_map(local_map, left, top, right, bottom)
+local function update_map(local_map, layer, left, top, right, bottom)
   local local_state = get_local_state() --[[@as StateMemory]]
   local max_x, max_y = local_state.width * CONST.ROOM_WIDTH, local_state.height * CONST.ROOM_HEIGHT
   local remainder_max_y = 120 - max_y
@@ -205,7 +205,7 @@ local function update_map(local_map, left, top, right, bottom)
         x, y = ((x - 3) % max_x) + 3, ((y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       end
       if is_valid_grid_coord(x, y) then
-        local uid = get_grid_entity_at(x, y, local_state.camera_layer)
+        local uid = get_grid_entity_at(x, y, layer)
         if uid == -1 then
           local_map[y][x] = TILE_TYPE.AIR
         elseif test_flag(get_entity_flags(uid), ENT_FLAG.SOLID) then
@@ -233,14 +233,14 @@ set_callback(function()
   if get_frame() % options.refresh_modulo > 0 or local_state.screen ~= SCREEN.LEVEL or local_state.time_startup == last_time or local_state.pause ~= 0 then return end
 
   last_time = local_state.time_startup
-  update_map(map, get_camera_bounds_grid())
+  update_map(map, local_state.camera_layer, get_camera_bounds_grid())
   if options.all_players then
     local players = get_local_players()
     for _, p in pairs(players) do
       if p.health > 0 and p.uid ~= local_state.camera.focused_entity_uid then
-        local x, y = get_position(p.uid)
+        local x, y, layer = get_position(p.uid)
         local layer_map = p.layer == LAYER.FRONT and map_front or map_back
-        update_map(layer_map, get_camera_bounds_grid_pos(x, y))
+        update_map(layer_map, layer, get_camera_bounds_grid_pos(x, y))
       end
     end
   end
