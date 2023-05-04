@@ -176,12 +176,7 @@ local function is_valid_grid_coord(x, y)
   return x >= 0 and x < CONST.MAX_TILES_HORIZ and y >= 0 and y < CONST.MAX_TILES_VERT
 end
 
-local last_time = -1
-
-set_callback(function()
-  last_time = -1
-  map = {}
-  draw_map = {}
+local function update_map_size()
   local local_state = get_local_state() --[[@as StateMemory]]
   if options.map_type == MAP_TYPE.FULL_MAP then
     map_size_x = math.floor(((local_state.width * CONST.ROOM_WIDTH + 6) + 0.5) / 2)
@@ -190,6 +185,15 @@ set_callback(function()
     map_size_x = options.map_size_x
     map_size_y = options.map_size_y
   end
+end
+
+local last_time = -1
+
+set_callback(function()
+  last_time = -1
+  map = {}
+  draw_map = {}
+  update_map_size()
   for y = 0, CONST.MAX_TILES_VERT do
     map_front[y] = {}
     map_back[y] = {}
@@ -322,10 +326,7 @@ set_callback(function (ctx)
       win.x, win.y, win.w, win.h = pos.x, pos.y, size.x, size.y
     end)
   end
-  if options.map_type == MAP_TYPE.FOLLOW_PLAYER then
-    map_size_x = options.map_size_x
-    map_size_y = options.map_size_y
-  end
+  update_map_size()
   local local_state = get_local_state() --[[@as StateMemory]]
   if win.w == math.huge or local_state.screen ~= SCREEN.LEVEL or not map_visible then return end -- Prevent infinity error, don't render if not visible
   --render map
