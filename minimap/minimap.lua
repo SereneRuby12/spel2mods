@@ -8,6 +8,7 @@ meta = {
 }
 
 local map_size_x, map_size_y = 25, 25
+local map_visible = true
 local map_alpha = 150
 
 ---@enum MAP_TYPE
@@ -222,6 +223,7 @@ local function update_map(local_map, layer, left, top, right, bottom)
   end
 end
 
+local last_button_time, button_pressed = 0, false
 set_callback(function()
   if map_alpha ~= options.map_alpha then
     map_alpha = options.map_alpha
@@ -229,6 +231,20 @@ set_callback(function()
   end
   local local_state = get_local_state() --[[@as StateMemory]]
   map = local_state.camera_layer == LAYER.FRONT and map_front or map_back
+  local player_buttons = local_state.player_inputs.player_slots[online.lobby.local_player_slot].buttons
+  if player_buttons & BUTTON.DOOR ~= 0 then
+    if button_pressed then
+      if local_state.time_startup > last_button_time + 30 then
+        last_button_time = math.maxinteger - 30
+        map_visible = not map_visible
+      end
+    else
+      button_pressed = true
+      last_button_time = local_state.time_startup
+    end
+  else
+    button_pressed = false
+  end
 
   if get_frame() % options.refresh_modulo > 0 or local_state.screen ~= SCREEN.LEVEL or local_state.time_startup == last_time or local_state.pause ~= 0 then return end
 
@@ -311,7 +327,7 @@ set_callback(function (ctx)
     map_size_y = options.map_size_y
   end
   local local_state = get_local_state() --[[@as StateMemory]]
-  if win.w == math.huge or local_state.screen ~= SCREEN.LEVEL then return end -- Prevent infinity error
+  if win.w == math.huge or local_state.screen ~= SCREEN.LEVEL or not map_visible then return end -- Prevent infinity error, don't render if not visible
   --render map
   local size_x, size_y = win.w, (win.w * 16) / 9
   local rect = AABB:new(.0, .0, .0, .0) -- Using one AABB variable for better performance
