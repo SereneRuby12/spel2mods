@@ -2,7 +2,7 @@ meta = {
     name = "Walls are shifting (online)",
     version = "0.8",
     description = "Crushblocks spawn everywhere, might desync after some levels",
-    author = "Estebanfer"
+    author = "SereneRuby12"
 }
 
 local function destroy_floor(ent)

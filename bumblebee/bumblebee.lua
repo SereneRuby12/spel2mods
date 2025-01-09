@@ -2,7 +2,7 @@ meta = {
     name = "Bumblebee mod",
     version = "1.0",
     description = "Adds bumblebee mount",
-    author = "Estebanfer"
+    author = "SereneRuby12"
 }
 local JUMP = 1
 local LEFT_DIR = 9 -- 256

@@ -1,7 +1,7 @@
 meta.name = "All Chars"
 meta.version = "1.0a"
 meta.description = ""
-meta.author = "Estebanfer"
+meta.author = "SereneRuby12"
 
 local all_chars_names = {"CHAR_ANA_SPELUNKY",
 "CHAR_MARGARET_TUNNEL",

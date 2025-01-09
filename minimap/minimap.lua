@@ -1,6 +1,6 @@
 ---@diagnostic disable-next-line: lowercase-global
 meta = {
-  author = "Estebanfer",
+  author = "SereneRuby12",
   name = "Mini Map",
   description = "Adds a simple mini map. Hold the interact (door) button to toggle minimap visibility",
   version = "0.8",

@@ -1,7 +1,7 @@
 meta.name = 'Spelunky Manhunt'
 meta.version = '1.2'
 meta.description = 'Spawns an angry hired hand at every level'
-meta.author = 'Estebanfer'
+meta.author = 'SereneRuby12'
 
 local reviving = false
 local count = 0

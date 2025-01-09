@@ -11,7 +11,7 @@ Another bug is that sometimes olmec spawns under the floor (probably only when s
 The game pauses when not moving, giving you time to think what to do.
 ##### [Slower Crush Traps](https://spelunky.fyi/mods/m/slower-crush-traps) by @Charade 
 Crush traps move slower, giving you more reaction time
-##### [SlowMo](https://spelunky.fyi/mods/m/slowmo) by me ( @estebanfer )
+##### [SlowMo](https://spelunky.fyi/mods/m/slowmo) by me ( @SereneRuby12 )
 You can toggle slowmo to make it easier.
 (Probably SUPER HOT LUNKY and SlowMo aren't compatible, I didn't test it tho)
 ##### [Extra Shortcuts](https://spelunky.fyi/mods/m/extra-shortcuts) by @garebear

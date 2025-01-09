@@ -1,5 +1,5 @@
 meta.name = "portalunky"
-meta.author = "Estebanfer"
+meta.author = "SereneRuby12"
 --TODO: I had a crash when setting a portal in the bounds, being in the portal, and placing it in another place
 --Do something to fix portal glitch that allows players to go through floors
 --Fix when a portal gun is destroyed
