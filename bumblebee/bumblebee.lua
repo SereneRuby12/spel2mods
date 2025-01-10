@@ -284,7 +284,7 @@ set_callback(function()
                     c_ent.not_climbing = true
                 end
                 if test_flag(input, JUMP) then
-                    if not c_ent.rider_jumped and bumblebee.standing_on_uid == -1 and c_ent.flying_timer ~= 0 and bumblebee.some_state == 0 and bumblebee:topmost() == bumblebee then --some_state is for checking if the mount is wet, topmost() is for checking if is in a pipe
+                    if not c_ent.rider_jumped and bumblebee.standing_on_uid == -1 and c_ent.flying_timer ~= 0 and bumblebee:topmost() == bumblebee then --topmost() is for checking if is in a pipe. Doesn't work well in water
                         c_ent.flying = not c_ent.flying
                         local backitem_uid = rider:worn_backitem()
                         if c_ent.flying then
