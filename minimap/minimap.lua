@@ -3,7 +3,7 @@ meta = {
   author = "SereneRuby12",
   name = "Mini Map",
   description = "Adds a simple mini map. Hold the interact (door) button to toggle minimap visibility",
-  version = "0.8",
+  version = "0.8a",
   online_safe = true
 }
 
@@ -33,6 +33,7 @@ local MAP_TYPE = {
 ---@field map_size_x integer
 ---@field map_size_y integer
 ---@field window_info WindowInfo
+---@field co_loop_map boolean
 local default_options = {
   map_alpha = 120,
   map_size_x = 25,
@@ -42,17 +43,19 @@ local default_options = {
   draw_border = true,
   window_open = true,
   map_type = MAP_TYPE.FOLLOW_PLAYER,
-  window_info = { x = -0.96, y = 0.732, w = 0.2, h = 0.0 }
+  window_info = { x = -0.96, y = 0.732, w = 0.2, h = 0.0 },
+  co_loop_map = true,
 }
 
 ---@type ModOptions
----@diagnostic disable-next-line: lowercase-global
+---@diagnostic disable-next-line: lowercase-global, missing-fields
 options = { table.unpack(default_options) }
 
 register_option_int("map_alpha", "Map Opacity", "", 120, 1, 255)
 register_option_int("refresh_modulo", "Refresh map 1/x of the frames", "Try increasing this if you have performance issues", 1, 1, 10)
 register_option_bool("all_players", "Reveal map from all players' positions", "Other players will also reveal map tiles. Might have effects on performance", true)
 register_option_bool("draw_border", "Draw map border", "", true)
+register_option_bool("co_loop_map", "Enable map looping in CO", "", true)
 register_option_button("open_window", "Move map", "Open a window that allows to move the map position and change size. You can close it after editing", function ()
 	options.window_open = true
 end)
@@ -297,7 +300,7 @@ set_callback(function()
     local forming_column_tile = nil
     for y = map_size_y, -map_size_y, -1 do
       local grid_x, grid_y = cam_x+x, cam_y+y
-      if local_state.theme == THEME.COSMIC_OCEAN then
+      if local_state.theme == THEME.COSMIC_OCEAN and options.co_loop_map then
         grid_x, grid_y = ((grid_x - 3) % max_x) + 3, ((grid_y-remainder_max_y - 3) % max_y) + 3 + remainder_max_y
       end
       if map[grid_y] and forming_column_tile ~= map[grid_y][grid_x] then
