@@ -1,0 +1,362 @@
+\-size                                   3 3        // level size in rooms
+\-back_room_chance                       0          // % chance of a second room (default = 6%)
+\-back_room_interconnection_chance       0          // % chance of a second room interconnection (default = 20%)
+\-back_room_hidden_door_chance           0          // 1/N chance of a hidden door (default = 500)
+\-back_room_hidden_door_cache_chance     0          // 1/N chance of a hidden door to a cache (default = 1000)
+\-mount_chance                           0          // 1/N chance of a mount (default = 5000)
+\-altar_room_chance                      0          // 1/N chance of an altar room (default = 14)
+\-idol_room_chance                       0          // 1/N chance of an idol room (default = 10)
+\-floor_side_spread_chance               0          // 1/N chance of a spreadable floor spreading to its side (default = 10)
+\-floor_bottom_spread_chance             0          // 1/N chance of a spreadable floor spreading to its bottom (default = 5)
+
+\?thief                            J
+\?altar                            x
+\?vault_wall                       |
+\?wanted_poster                    W
+\?stone_floor                      +
+\?tomb_floor                       G
+\?haunted_corpse                   7
+\?shop_wall%50                     ;
+\?shop_woodwall                    :
+\?die                              %
+\?merchant                         #
+\?cavemanshopkeeper                &
+\?sleeping_hiredhand               \
+\?forcefield                       ?
+\?forcefield_top                   '
+\?empty                            0
+\?floor                            1
+\?floor%50                         2
+\?minewood_floor                   =
+\?floor_hard                       X
+\?floor_hard%50%floor              Y
+\?adjacent_floor                   Z
+\?ladder                           L
+\?ladder_plat                      P
+\?platform                         p
+\?door                             9
+\?door2                            D
+\?door2_secret                     d
+\?locked_door                      /
+\?spikes                           ^
+\?push_block                       4
+\?bone_block                       f
+\?treasure                         t
+\?litwalltorch                     O
+\?cookfire                         r
+\?turkey                           u
+\?idol                             I
+\?coffin                           g
+\?shop_sign                        K
+\?shop_door                        k
+\?lamp_hang                        l
+\?shop_wall                        .
+\?shop_item                        S
+\?shopkeeper                       $
+\?pen_floor                        a
+\?entrance                         !
+\?back_jetpack                     "
+\?back_powerpack                   (
+\?back_telepack                    )
+\?back_hoverpack                   *
+\?playerbag                        ,
+\?kapala                           -
+\?shoes_spring                     3
+\?exit                             5
+\?crate                            6
+\?vlads_cape                       8
+\?royal_jelly                      <
+\?elixir                           >
+\?ankh                             @
+\?shoes_spike                      B
+\?climbing_gloves                  C
+\?pitchers_mitt                    A
+\?paste                            E
+\?dwelling_door                    F
+\?jungle_door                      H
+\?volcana_door                     M
+\?olmec_door                       N
+\?tidepool_door                    Q
+\?temple_door                      R
+\?icecaves_door                    T
+\?neobab_door                      U
+\?tiamat_door                      V
+\?sunkencity_door                  [
+\?hundun_door                      ]
+\?co_door                          _
+\?duat_floor                       `
+\?pagoda_floor                     b
+\?duat_door                        c
+\?abzu_door                        e
+\?houyibow                         h
+\?lightarrow                       i
+\?chain_ceiling                    j
+\?temple_floor                     m
+\?sunken_floor                     n
+\?babylon_floor                    o
+\?eggplant                         q
+\?cog_door                         s
+\?scepter                          v
+\?hedjet                           w
+\?eggplant_door                    y
+\?mother_statue                    z
+\?eggplant_child                   {
+\?mothership_floor                 ~
+\?camera                           ‚
+\?cape                             ƒ
+\?clonegun                         „
+\?crossbow                         …
+\?gun_freezeray                    †
+\?gun_shotgun                      ‡
+\?gun_webgun                       ˆ
+\?machete                          ‰
+\?mattock                          Š
+\?shield_metal                     ‹
+\?shield_wooden                    Œ
+\?teleporter                       ‘
+\?lockedchest                      }
+\?udjat_key                        “
+\?crown                            ”
+\?treasure_vaultchest              Ž
+\?tablet                           ’
+\?excalibur                        •
+\?mount_qilin                      –
+\?compass_alien                    —
+\?bone_key                         ™
+\?compass                          š
+\?parachute                        ›
+\?plasma_cannon                    œ
+\?specs                            ž
+\?true_crown                       Ÿ
+\?boomerang                        ¡
+\?icefloor                         ¢
+\?mount_rockdog                    £
+\?mount_axolotl                    ¤
+\?littorch                         ¥
+\?critter_penguin                  ¦
+\?critter_drone                    §
+\?catmummy                         ¨
+\?witchdoctor                      ©
+\?dustwall                         ª
+\?bush_block                       «
+\?eggplant_crown                   €
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom0-0
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+\!dual
+=L@0====== 1111000000
+=P====0000 1©©1000000
+=L00000000 1111000000
+=L0<<<<0LD 0000000LOD
+=P======P= 1111111P11
+=L000000L8 1©©1111L1l
+=L0,,,,0L8 1111111L0¨
+=P======P= 1111111111
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom0-1
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+==========
+00l00>>>>=
+0ƒƒ00=====
+0ƒƒ00----=
+==========
+8""(())**=
+8""(())**=
+==========
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom0-2
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+Xn0000000n
+Xn000L0{0n
+Xn000Pnnnn
+Xn000L000n
+Xn000L000n
+Xn€z0L0y0n
+XnnnnPnnnn
+====nLn=–=
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom1-0
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+=L0™}0“0L0
+=Lp====pL0
+=L000000L0
+=L0H00M0L0
+=P======P0
+=L000000L0
+LL0!00F0L0
+P=========
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom1-1
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+=”Lw=LŽŽŽŽ
+==P==P====
+00L00L0v00
+0QLR0L0s0[
+=b=m=P===n
+00000L0000
+0N¦TqL0e•c
+=+=¢===b+`
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom1-2
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+L0’00Lih0=
+P====P+++=
+L0§00L000=
+L0U00LV0]=
+==o==Po+n=
+00000L00—=
+000¥0LO_O=
+======111=
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom2-0
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+L„„‘„„L0œ0
+P=====Pp==
+L‚0…0†L033
+P=====P033
+L‡0ˆ0‰L0==
+P=====P0BB
+LŠ0‹Œ¡L0BB
+==========
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom2-1
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+LŽŽLŽŽLŽŽL
+P==P==P==P
+LAALEELžžL
+LAALEELžžL
+P==P==P==P
+LCCLššL››L
+LCCLššL››L
+==========
+
+////////////////////////////////////////////////////////////////////////////////
+\.setroom2-2
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+L000LŸŸŸŸ=
+P0£0P=====
+L=¤=L@@@0=
+L=u=L=====
+P===L0000=
+LII0L0000=
+LII0L0xx0=
+=====1111=
+
+////////////////////////////////////////////////////////////////////////////////
+\.entrance
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+0L000000L0
+0L066660L0
+0L0====0L0
+0L066660L0
+0L0====0L0
+0L000000L0
+0L090000L0
+==========
+
+////////////////////////////////////////////////////////////////////////////////
+\.entrance_drop
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000800000
+
+////////////////////////////////////////////////////////////////////////////////
+\.exit
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000900000
+
+////////////////////////////////////////////////////////////////////////////////
+\.exit_notop
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000900000
+
+////////////////////////////////////////////////////////////////////////////////
+\.chunk_door
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+\!flip
+009000
+======
+======
+
+////////////////////////////////////////////////////////////////////////////////
+\.chunk_ground
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+\!ignore
+00000
+00000
+00000
+
+// room
+\!flip
+00000
+=====
+=====
+
+////////////////////////////////////////////////////////////////////////////////
+\.chunk_air
+////////////////////////////////////////////////////////////////////////////////
+
+// room
+00000
+00000
+00000
