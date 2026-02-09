@@ -31,7 +31,8 @@ local ICBM_STATE = {
   EXPLODED = 5
 }
 
-local SELECT_TARGET_TIMER = 60 * 5
+local MIN_SELECT_TARGET_TIMER = 60 * 4
+local MAX_SELECT_TARGET_TIMER = 60 * 5
 local LOCK_POS_TIMER = 60 * 3
 local LAND_TIMER = 60 * 1
 local EXPLODE_TIMER = 60 * 1
@@ -88,7 +89,7 @@ end
 local function update_icbm(icbm)
   local idata = icbm.user_data
   if idata.target_uid ~= -1 and not get_entity(idata.target_uid) then
-    idata.attack_timer = SELECT_TARGET_TIMER
+    idata.attack_timer = prng:random(MIN_SELECT_TARGET_TIMER, MAX_SELECT_TARGET_TIMER)
     idata.state = ICBM_STATE.IDLE
     idata.target_uid = -1
     icbm.flags = set_flag(icbm.flags, ENT_FLAG.INVISIBLE)
@@ -148,7 +149,7 @@ local function update_icbm(icbm)
     end
     if idata.attack_timer <= 0 then
       idata.state = ICBM_STATE.IDLE
-      idata.attack_timer = SELECT_TARGET_TIMER
+      idata.attack_timer = prng:random(MIN_SELECT_TARGET_TIMER, MAX_SELECT_TARGET_TIMER)
       icbm.flags = set_flag(icbm.flags, ENT_FLAG.INVISIBLE)
       icbm:set_texture(icbm_texture)
       idata.sound = nil
@@ -180,7 +181,7 @@ local function spawn_icbm(x, y, layer)
   icbm:set_texture(icbm_texture)
   icbm.user_data = {
     state = ICBM_STATE.IDLE,
-    attack_timer = SELECT_TARGET_TIMER,
+    attack_timer = MIN_SELECT_TARGET_TIMER + prng:random(MAX_SELECT_TARGET_TIMER),
     fx_timer = 0,
     anim_timer = 0,
     target_uid = -1,

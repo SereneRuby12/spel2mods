@@ -32,7 +32,7 @@ local function update_telefragger(self)
   sdata.teleport_timer = sdata.teleport_timer - 1
   if sdata.teleport_timer == 55 then
     local snd = tp_sound:play()
-    snd:set_volume(commonlib.SOUND_VOLUME + 0.15)
+    snd:set_volume(commonlib.SOUND_VOLUME + 0.3)
   end
   if sdata.teleport_timer <= 0 then
     local target_uid = commonlib.select_target(self, true)
@@ -96,7 +96,7 @@ local function spawn_telefragger(x, y, layer)
   telefragger:set_draw_depth(1)
   telefragger:set_texture(telefragger_texture)
   telefragger.user_data = {
-    teleport_timer = TELEPORT_TIMER,
+    teleport_timer = math.floor(TELEPORT_TIMER * (2/3)) + prng:random(TELEPORT_TIMER),
     fx_timer = FX_TIMER,
     anim_timer = 0,
     target_uid = -1,
