@@ -4,6 +4,7 @@ local icbmlib = require "enemies.icbm"
 local dozerlib = require "enemies.dozer"
 local doombringerlib = require "enemies.doombringer"
 local voidbreakerlib = require "enemies.voidbreaker"
+local belllib = require "enemies.bell"
 
 local function spawn_random(spawn_func, num, last_param)
   for i = 1, num do
@@ -24,5 +25,6 @@ set_callback(function ()
   dozerlib.spawn_dozer()
   doombringerlib.spawn_doombringer()
   voidbreakerlib.spawn_voidbreaker(3)
+  spawn_random(belllib.spawn_bell, 2)
 end, ON.POST_LEVEL_GENERATION)
 

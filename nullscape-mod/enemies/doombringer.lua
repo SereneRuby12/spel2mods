@@ -62,10 +62,14 @@ set_callback(function ()
     local info = target_player_info[player.uid]
     if info.state == DOOMBRINGER_STATE.CALM then
       if info.timer <= 0 then
-        local enemies_close = get_entities_at(0, MASK.MONSTER, player.abs_x, player.abs_y, player.layer, 10)
+        local enemies_close = get_entities_at(0, MASK.MONSTER, player.abs_x, player.abs_y, player.layer, 9)
         enemies_close = filter_entities(enemies_close, function(enemy)
           return test_flag(enemy.flags, ENT_FLAG.CAN_BE_STOMPED)
+            and not test_flag(enemy.flags, ENT_FLAG.DEAD)
+            and not test_flag(enemy.flags, ENT_FLAG.PASSES_THROUGH_PLAYER)
+            and enemy.abs_y <= player.abs_y + 2
         end)
+        messpect(#enemies_close)
         if #enemies_close > 0 then
           info.state = DOOMBRINGER_STATE.SCREAMING
           info.timer = DOOMBRINGER_EXPLODE_TIME

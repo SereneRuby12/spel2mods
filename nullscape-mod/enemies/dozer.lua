@@ -3,6 +3,7 @@ local commonlib = require "common"
 local module = {}
 
 local clock_sound = create_sound("./enemies/sounds/Dozer_Clock.ogg") --[[@as CustomSound]]
+local success_sound = create_sound("./enemies/sounds/Dozer_Success.ogg") --[[@as CustomSound]]
 
 local eepy_texture = nil
 local wakey_texture = nil
@@ -91,6 +92,8 @@ set_callback(function ()
         info.state = DOZER_STATE.INVISIBLE
         info.timer = prng:random(DOZER_MIN_SHOW_TIME, DOZER_MAX_SHOW_TIME)
         info.clock_sound:stop()
+        local snd = success_sound:play()
+        snd:set_volume(commonlib.SOUND_VOLUME)
       elseif info.timer <= 0 then
         info.state = DOZER_STATE.WAKEY
         info.timer = DOZER_ATTACK_TIME

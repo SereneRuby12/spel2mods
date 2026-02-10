@@ -22,9 +22,24 @@ local function ease_out_to_zero(x)
   return ((x-1)*(x-1))
 end
 
+local function ease_in(x)
+  return x*x
+end
+
+local function ease_in_to_zero(x)
+  return (-(x*x)) + 1
+end
+
+local function maxmin(min, x, max)
+  return math.max(min, math.min(max, x))
+end
+
 return {
   select_target = select_target,
   ease_out = ease_out,
   ease_out_to_zero = ease_out_to_zero,
+  ease_in = ease_in,
+  ease_in_to_zero = ease_in_to_zero,
+  maxmin = maxmin,
   SOUND_VOLUME = 0.35
 }

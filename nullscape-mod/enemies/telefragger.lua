@@ -44,7 +44,7 @@ local function update_telefragger(self)
         local left, _, right = get_bounds()
         tele_x = math.min(right, math.max(left, tele_x))
       end
-      move_entity(self.uid, tx + off_x, ty, 0, 0, tl)
+      move_entity(self.uid, tele_x, ty, 0, 0, tl)
       sdata.teleport_timer = TELEPORT_TIMER
       sdata.fx_timer = FX_TIMER
       sdata.target_uid = target_uid
