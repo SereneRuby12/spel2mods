@@ -18,8 +18,13 @@ local function ease_out(x)
   return (-((x-1)*(x-1))) + 1
 end
 
+local function ease_out_to_zero(x)
+  return ((x-1)*(x-1))
+end
+
 return {
   select_target = select_target,
   ease_out = ease_out,
+  ease_out_to_zero = ease_out_to_zero,
   SOUND_VOLUME = 0.35
 }
