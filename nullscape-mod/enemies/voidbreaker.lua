@@ -1,13 +1,12 @@
 local commonlib = require "common"
 
-local module = {}
-
 local show_sound = create_sound("./enemies/sounds/Voidbreaker_Show.ogg") --[[@as CustomSound]]
 local sword_sound = create_sound("./enemies/sounds/Voidbreaker_Sword.ogg") --[[@as CustomSound]]
 local sword_go_sound = create_sound("./enemies/sounds/Voidbreaker_Sword_Go.ogg") --[[@as CustomSound]]
 
-local knight_texture = nil
-local sword_texture = nil
+local knight_texture
+local sword_texture
+local icon_texture
 do
   local tdef = TextureDefinition:new() --[[@as TextureDefinition]]
   tdef.width, tdef.height = 296, 376
@@ -20,6 +19,13 @@ do
   tdef.sub_image_width, tdef.sub_image_height = 296, 116
   tdef.sub_image_offset_x, tdef.sub_image_offset_y = 0, 260
   sword_texture = define_texture(tdef)
+
+  tdef.width, tdef.height = 512, 512
+  tdef.tile_width, tdef.tile_height = 512, 512
+  tdef.sub_image_width, tdef.sub_image_height = 0, 0
+  tdef.sub_image_offset_x, tdef.sub_image_offset_y = 0, 0
+  tdef.texture_path = "./enemies/assets/icons/voidbreaker.png"
+  icon_texture = define_texture(tdef)
 end
 
 ---@enum VOIDBREAKER_STATE
@@ -194,9 +200,13 @@ set_callback(function ()
   target_player_info = {}
 end, ON.PRE_LEVEL_DESTRUCTION)
 
-function module.spawn_voidbreaker(num)
-  voidbreakers_in_level = num
+local function spawn_voidbreaker()
+  voidbreakers_in_level = voidbreakers_in_level + 1
 end
 
-return module
+---@type EnemyInfo[]
+return {{
+  spawn = spawn_voidbreaker,
+  icon_texture = icon_texture,
+}}
 

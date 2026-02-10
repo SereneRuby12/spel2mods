@@ -1,13 +1,12 @@
 local commonlib = require "common"
 
-local module = {}
-
 local clock_sound = create_sound("./enemies/sounds/Dozer_Clock.ogg") --[[@as CustomSound]]
 local success_sound = create_sound("./enemies/sounds/Dozer_Success.ogg") --[[@as CustomSound]]
 
-local eepy_texture = nil
-local wakey_texture = nil
-local creepy_texture = nil
+local eepy_texture
+local wakey_texture
+local creepy_texture
+local icon_texture
 do
   local tdef = TextureDefinition:new() --[[@as TextureDefinition]]
   tdef.width, tdef.height = 1024, 512
@@ -21,6 +20,12 @@ do
   wakey_texture = define_texture(tdef)
   tdef.texture_path = "./enemies/assets/dozer_creepy.png"
   creepy_texture = define_texture(tdef)
+
+  tdef.width, tdef.height = 500, 500
+  tdef.tile_width, tdef.tile_height = 500, 500
+  tdef.sub_image_width, tdef.sub_image_height = 0, 0
+  tdef.texture_path = "./enemies/assets/icons/dozer.png"
+  icon_texture = define_texture(tdef)
 end
 
 ---@enum DOZER_STATE
@@ -120,8 +125,15 @@ set_callback(function ()
   target_player_info = {}
 end, ON.PRE_LEVEL_DESTRUCTION)
 
-function module.spawn_dozer()
+local function spawn_dozer()
   dozer_in_level = true
 end
 
-return module
+---@type EnemyInfo[]
+return {{
+  spawn = spawn_dozer,
+  icon_texture = icon_texture,
+  name = "Dozer",
+  limit = 1,
+  hard_limit = 1,
+}}

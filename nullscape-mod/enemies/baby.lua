@@ -18,6 +18,9 @@ local voidbound_baby_charge_texture
 local voidbound_baby_charge_transition_texture
 
 local star_fx_texture
+local icon_texture
+local voidbound_icon_texture
+
 do
   local tdef = TextureDefinition:new() --[[@as TextureDefinition]]
   tdef.width, tdef.height = 1024, 1024
@@ -50,6 +53,15 @@ do
   tdef.sub_image_width, tdef.sub_image_height = 1000, 200
   tdef.texture_path = "./enemies/assets/voidbound_baby_charge_transition.png"
   voidbound_baby_charge_transition_texture = define_texture(tdef)
+
+  tdef.width, tdef.height = 512, 512
+  tdef.tile_width, tdef.tile_height = 512, 512
+  tdef.sub_image_width, tdef.sub_image_height = 0, 0
+  tdef.texture_path = "./enemies/assets/icons/baby.png"
+  icon_texture = define_texture(tdef)
+
+  tdef.texture_path = "./enemies/assets/icons/voidbound_baby.png"
+  voidbound_icon_texture = define_texture(tdef)
 end
 
 ---@class BabyAnimations
@@ -299,7 +311,20 @@ local function spawn_baby(x, y, layer, is_voidbound)
   return uid
 end
 
+local function spawn_voidbound_baby(x, y, layer)
+  return spawn_baby(x, y, layer, true)
+end
 
+---@type EnemyInfo[]
 return {
-  spawn_baby = spawn_baby
+  {
+    spawn = spawn_baby,
+    icon_texture = icon_texture,
+    max = 2,
+  },
+  {
+    spawn = spawn_voidbound_baby,
+    icon_texture = voidbound_icon_texture,
+    max = 3,
+  }
 }

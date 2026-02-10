@@ -2,8 +2,9 @@ local commonlib = require "common"
 
 local tp_sound = create_sound("./enemies/sounds/Teleport.mp3") --[[@as CustomSound]]
 
-local telefragger_texture = nil
-local telefragger_fx_texture = nil
+local telefragger_texture
+local telefragger_fx_texture
+local icon_texture
 do
   local tdef = TextureDefinition:new() --[[@as TextureDefinition]]
   tdef.width, tdef.height = 200, 100
@@ -15,6 +16,12 @@ do
   tdef.tile_width, tdef.tile_height = 256, 256
   tdef.texture_path = "./enemies/assets/telefragger_fx.png"
   telefragger_fx_texture = define_texture(tdef)
+
+  tdef.width, tdef.height = 512, 512
+  tdef.tile_width, tdef.tile_height = 512, 512
+  tdef.sub_image_width, tdef.sub_image_height = 0, 0
+  tdef.texture_path = "./enemies/assets/icons/telefragger.png"
+  icon_texture = define_texture(tdef)
 end
 
 local TELEPORT_TIMER = 60 * 7
@@ -128,6 +135,10 @@ local function spawn_telefragger(x, y, layer)
   return uid
 end
 
-return {
-  spawn_telefragger = spawn_telefragger
-}
+---@type EnemyInfo[]
+return {{
+  spawn = spawn_telefragger,
+  icon_texture = icon_texture,
+  name = "Telefragger",
+  limit = 3,
+}}

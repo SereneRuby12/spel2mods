@@ -2,9 +2,10 @@ local commonlib = require "common"
 
 local icbm_sound = create_sound("./enemies/sounds/ICBMStrike.mp3") --[[@as CustomSound]]
 
-local icbm_texture = nil
-local icbm_fx_texture = nil
-local explosion_texture = nil
+local icbm_texture
+local icbm_fx_texture
+local explosion_texture
+local icon_texture
 do
   local tdef = TextureDefinition:new() --[[@as TextureDefinition]]
   tdef.width, tdef.height = 1000, 400
@@ -20,6 +21,12 @@ do
   tdef.tile_width, tdef.tile_height = 96, 96
   tdef.texture_path = "./enemies/assets/explosion.png"
   explosion_texture = define_texture(tdef)
+
+  tdef.width, tdef.height = 512, 512
+  tdef.tile_width, tdef.tile_height = 512, 512
+  tdef.sub_image_width, tdef.sub_image_height = 0, 0
+  tdef.texture_path = "./enemies/assets/icons/icbm.png"
+  icon_texture = define_texture(tdef)
 end
 
 ---@enum ICBM_STATE
@@ -223,6 +230,9 @@ set_callback(function ()
   end
 end, ON.PRE_LEVEL_DESTRUCTION)
 
-return {
-  spawn_icbm = spawn_icbm,
-}
+---@type EnemyInfo[]
+return {{
+  spawn = spawn_icbm,
+  icon_texture = icon_texture,
+  limit = 2,
+}}
