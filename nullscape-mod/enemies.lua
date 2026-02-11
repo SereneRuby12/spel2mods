@@ -16,6 +16,7 @@ local function load_enemies()
   enemies_arrays[#enemies_arrays+1] = require "enemies.icbm"
   enemies_arrays[#enemies_arrays+1] = require "enemies.telefragger"
   enemies_arrays[#enemies_arrays+1] = require "enemies.voidbreaker"
+  enemies_arrays[#enemies_arrays+1] = require "enemies.mart"
 
   ---@type EnemyInfo[]
   local enemies = {}

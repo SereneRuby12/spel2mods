@@ -1,6 +1,8 @@
+require "curses"
+
 ---@class ModState
 ---@field run_enemies {enemy_idx: integer, number: integer}[]
----@field run_curses integer[]
+---@field run_curses {[CURSE_ID]: integer}
 ModState = {
   run_enemies = {},
   run_curses = {},

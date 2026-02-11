@@ -49,6 +49,7 @@ local function update_telefragger(self)
       local tele_x = tx + off_x
       if not state.theme_info:get_loop() then
         local left, _, right = get_bounds()
+        left, right = left - 1.5, right + 1.5
         tele_x = math.min(right, math.max(left, tele_x))
       end
       move_entity(self.uid, tele_x, ty, 0, 0, tl)

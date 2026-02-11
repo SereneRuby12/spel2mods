@@ -33,6 +33,10 @@ local function is_lobby_level()
   return state.level_count % 2 == 0
 end
 
+local function is_curse_level()
+  return true
+end
+
 set_callback(function ()
   if state.screen ~= SCREEN.TRANSITION or not is_lobby_level() then return end
   for _, player in ipairs(get_local_players()) do
@@ -73,21 +77,71 @@ local function add_enemy_to_run(enemy_idx)
   }
 end
 
+local function add_curse_to_run(curse_id)
+  if ModState.run_curses[curse_id] then
+    ModState.run_curses[curse_id] = ModState.run_curses[curse_id] + 1
+    return
+  end
+  ModState.run_curses[curse_id] = 1
+end
+
+local function get_curse_choices()
+  ---@type CURSE_ID[]
+  local curse_pool = {}
+  for curse_id = 1, CURSE_NUM do
+    if not ModState.run_curses[curse_id] or ModState.run_curses[curse_id] < CURSE_DATA[curse_id].max then
+      curse_pool[#curse_pool+1] = curse_id
+    end
+  end
+  if #curse_pool <= 3 then
+    return curse_pool
+  end
+  local curse_ids = {}
+  for i = 1, math.min(3, #curse_pool) do
+    local chosen_curse_pool_index = prng:random(#curse_pool)
+    curse_ids[#curse_ids+1] = curse_pool[chosen_curse_pool_index]
+    table.remove(curse_pool, chosen_curse_pool_index)
+  end
+  return curse_ids
+end
+
+local function spawn_curse_choices()
+  local curse_choice_ids = get_curse_choices()
+  if #curse_choice_ids == 0 then
+    state.theme_info:post_transition()
+  end
+  for i = 1, #curse_choice_ids do
+    local curse_id = curse_choice_ids[i]
+    choice_entlib.spawn_choice(11+(i*1.5), 112, LAYER.FRONT, CURSE_DATA[curse_id].texture_id, 0, function ()
+      add_curse_to_run(curse_id)
+      state.theme_info:post_transition()
+    end)
+  end
+end
+
+local function spawn_enemy_choices()
+  local gotten_choices = {}
+  local choice_ents = {}
+  for x = -1, 1 do
+    local enemy_idx = enemieslib.get_enemy_choice(gotten_choices)
+    choice_ents[#choice_ents+1] = choice_entlib.spawn_choice(14+(x*1.5), 112, LAYER.FRONT, Enemies[enemy_idx].icon_texture, 0, function ()
+      add_enemy_to_run(enemy_idx)
+      for _, uid in ipairs(choice_ents) do
+        get_entity(uid):destroy()
+      end
+      spawn_curse_choices()
+    end)
+    gotten_choices[#gotten_choices+1] = enemy_idx
+  end
+end
+
 set_callback(function ()
   if state.screen ~= SCREEN.TRANSITION or not is_lobby_level() then return end
   if test_flag(state.quest_flags, QUEST_FLAG.RESET) then
     ModState.run_enemies = {}
+    ModState.run_curses = {}
   end
-
-  local gotten_choices = {}
-  for x = -1, 1 do
-    local enemy_idx = enemieslib.get_enemy_choice(gotten_choices)
-    choice_entlib.spawn_choice(14+(x*1.5), 112, LAYER.FRONT, Enemies[enemy_idx].icon_texture, 0, function ()
-      add_enemy_to_run(enemy_idx)
-      state.theme_info:post_transition()
-    end)
-    gotten_choices[#gotten_choices+1] = enemy_idx
-  end
+  spawn_enemy_choices()
 end, ON.POST_LEVEL_GENERATION)
 
 -- Code to force transition on the first level

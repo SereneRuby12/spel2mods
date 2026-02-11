@@ -69,7 +69,6 @@ set_callback(function ()
             and not test_flag(enemy.flags, ENT_FLAG.PASSES_THROUGH_PLAYER)
             and enemy.abs_y <= player.abs_y + 2
         end)
-        messpect(#enemies_close)
         if #enemies_close > 0 then
           info.state = DOOMBRINGER_STATE.SCREAMING
           info.timer = DOOMBRINGER_EXPLODE_TIME
