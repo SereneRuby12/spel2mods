@@ -1,19 +1,7 @@
 local enemieslib = require "enemies"
 local choice_entlib = require "choice_entity"
-local inputs = 0
 
-set_callback(function ()
-  if state.screen ~= SCREEN.TRANSITION then return end
-  for _, player in ipairs(get_local_players()) do
-    if player.cutscene then
-      player:clear_cutscene()
-      player:set_pre_process_input(function (self)
-        player.input.buttons = inputs
-        player.input.buttons_gameplay = inputs
-      end)
-    end
-  end
-end, ON.GAMEFRAME)
+local inputs = 0
 
 local GAME_PROPS_INPUT = {
   JUMP = 1,
@@ -41,8 +29,25 @@ local GAME_PROPS_TO_INPUTS = {
   [GAME_PROPS_INPUT.DOWN]  = INPUTS.DOWN,
 }
 
+local function is_lobby_level()
+  return state.level_count % 2 == 0
+end
+
 set_callback(function ()
-  if state.screen ~= SCREEN.TRANSITION then return end
+  if state.screen ~= SCREEN.TRANSITION or not is_lobby_level() then return end
+  for _, player in ipairs(get_local_players()) do
+    if player.cutscene then
+      player:clear_cutscene()
+      player:set_pre_process_input(function (self)
+        player.input.buttons = inputs
+        player.input.buttons_gameplay = inputs
+      end)
+    end
+  end
+end, ON.GAMEFRAME)
+
+set_callback(function ()
+  if state.screen ~= SCREEN.TRANSITION or not is_lobby_level() then return end
   local new_inputs = 0
   local gprops_inputs = game_manager.game_props.input[1]
   for game_prop_bit, inputs_bit in pairs(GAME_PROPS_TO_INPUTS) do
@@ -69,7 +74,7 @@ local function add_enemy_to_run(enemy_idx)
 end
 
 set_callback(function ()
-  if state.screen ~= SCREEN.TRANSITION then return end
+  if state.screen ~= SCREEN.TRANSITION or not is_lobby_level() then return end
   if test_flag(state.quest_flags, QUEST_FLAG.RESET) then
     ModState.run_enemies = {}
   end
