@@ -1,3 +1,4 @@
+local commonlib = require "common"
 
 local lut_textures = {}
 local LUT_TEXTURE_NUM = 80
@@ -8,8 +9,6 @@ do
     lut_textures[i] = define_texture(tdef)
   end
 end
-
-local commonlib = require "common"
 
 local bell_sound = create_sound("./enemies/sounds/Bell_Ring.ogg") --[[@as CustomSound]]
 
@@ -174,9 +173,9 @@ set_callback(function ()
   set_lut(nil, LAYER.BACK)
 end, ON.PRE_LEVEL_DESTRUCTION)
 
----@type EnemyInfo[]
-return {{
-  spawn = spawn_bell,
+---@type EnemyInfo
+return {
+  spawn = commonlib.spawn_default_fun(spawn_bell),
   icon_texture = icon_texture,
   limit = 1,
-}}
+}

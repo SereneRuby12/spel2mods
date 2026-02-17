@@ -123,11 +123,11 @@ function spawn_mart(x, y, layer)
   return uid
 end
 
----@type EnemyInfo[]
-return {{
-  spawn = function() return spawn_mart() end,
+---@type EnemyInfo
+return {
+  spawn = commonlib.spawn_default_fun(spawn_mart),
   icon_texture = icon_texture,
   name = "Mart",
   limit = 1,
-}}
+}
 

@@ -318,12 +318,12 @@ end
 ---@type EnemyInfo[]
 return {
   {
-    spawn = spawn_baby,
+    spawn = commonlib.spawn_default_fun(spawn_baby),
     icon_texture = icon_texture,
     max = 2,
   },
   {
-    spawn = spawn_voidbound_baby,
+    spawn = commonlib.spawn_default_fun(spawn_voidbound_baby),
     icon_texture = voidbound_icon_texture,
     max = 3,
   }

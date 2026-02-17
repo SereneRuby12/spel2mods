@@ -7,9 +7,9 @@ do
   random_texture = define_texture(tdef)
 end
 
-local function spawn_random(x, y, layer)
+local function spawn_random()
   local choices_available = {}
-  for enemy_idx, enemy in ipairs(Enemies) do
+  for enemy_idx, enemy in ipairs(ENEMY_DATA) do
     for _, run_enemy in ipairs(ModState.run_enemies) do
       if run_enemy.enemy_idx == enemy_idx and enemy.hard_limit and run_enemy.number >= enemy.hard_limit then
         goto continue
@@ -19,7 +19,7 @@ local function spawn_random(x, y, layer)
     ::continue::
   end
   local enemy_idx = choices_available[prng:random(#choices_available)]
-  Enemies[enemy_idx].spawn(x, y, layer)
+  ENEMY_DATA[enemy_idx].spawn()
 end
 
 ---@type EnemyInfo

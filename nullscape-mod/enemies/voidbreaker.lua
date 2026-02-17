@@ -204,9 +204,8 @@ local function spawn_voidbreaker()
   voidbreakers_in_level = voidbreakers_in_level + 1
 end
 
----@type EnemyInfo[]
-return {{
+---@type EnemyInfo
+return {
   spawn = spawn_voidbreaker,
   icon_texture = icon_texture,
-}}
-
+}

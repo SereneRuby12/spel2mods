@@ -1,44 +1,52 @@
+---@enum ENEMY_ID
+ENEMY_ID = {
+  BABY = 1,
+  VOIDBOUND_BABY = 2,
+  BELL = 3,
+  DOZER = 4,
+  ICBM = 5,
+  TELEFRAGGER = 6,
+  VOIDBREAKER = 7,
+  MART = 8,
+  RANDOM = -1,
+}
+
 ---@class EnemyInfo
----@field spawn fun(x: number, y: number, l: number): integer
+---@field spawn fun(): integer
 ---@field icon_texture TEXTURE
 ---@field limit integer?
 ---@field hard_limit integer?
 ---@field name string?
 ---@field description string?
+---@field min_level integer?
 
 ---@return EnemyInfo[]
 local function load_enemies()
-  ---@type EnemyInfo[][]
-  local enemies_arrays = {}
-  enemies_arrays[#enemies_arrays+1] = require "enemies.baby"
-  enemies_arrays[#enemies_arrays+1] = require "enemies.bell"
-  enemies_arrays[#enemies_arrays+1] = require "enemies.dozer"
-  enemies_arrays[#enemies_arrays+1] = require "enemies.icbm"
-  enemies_arrays[#enemies_arrays+1] = require "enemies.telefragger"
-  enemies_arrays[#enemies_arrays+1] = require "enemies.voidbreaker"
-  enemies_arrays[#enemies_arrays+1] = require "enemies.mart"
-
-  ---@type EnemyInfo[]
+  ---@type {[ENEMY_ID: EnemyInfo}
   local enemies = {}
-  for _, i_enemies in ipairs(enemies_arrays) do
-    for _, enemy in ipairs(i_enemies) do
-      enemies[#enemies+1] = enemy
-    end
-  end
+  local babies = require "enemies.baby"
+  enemies[ENEMY_ID.BABY] = babies[1]
+  enemies[ENEMY_ID.VOIDBOUND_BABY] = babies[2]
+
+  enemies[ENEMY_ID.BELL] = require "enemies.bell"
+  enemies[ENEMY_ID.DOZER] = require "enemies.dozer"
+  enemies[ENEMY_ID.ICBM] = require "enemies.icbm"
+  enemies[ENEMY_ID.TELEFRAGGER] = require "enemies.telefragger"
+  enemies[ENEMY_ID.VOIDBREAKER] = require "enemies.voidbreaker"
+  enemies[ENEMY_ID.MART] = require "enemies.mart"
+
   enemies[-1] = require "enemies.random"
   return enemies
 end
 
 local module = {}
 
-local enemies = load_enemies()
-
-Enemies = enemies
+---@type {[ENEMY_ID]: EnemyInfo}
+ENEMY_DATA = load_enemies()
 
 function module.spawn_enemy(index, amount)
   for i = 1, amount do
-    local off_x, off_y = (prng:random() * 6) - 3, (prng:random() * 1.5) + 3.5
-    enemies[index].spawn(state.level_gen.spawn_x + off_x, state.level_gen.spawn_y + 4, LAYER.FRONT)
+    ENEMY_DATA[index].spawn()
   end
 end
 
@@ -52,14 +60,14 @@ end
 ---@param ignore_choices integer[]
 function module.get_enemy_choice(ignore_choices)
   local choices_available = {}
-  for i, enemy in ipairs(enemies) do
-    if not has(ignore_choices, i) then
+  for enemy_id, enemy in ipairs(ENEMY_DATA) do
+    if not has(ignore_choices, enemy_id) then
       for _, run_enemy in ipairs(ModState.run_enemies) do
-        if run_enemy.enemy_idx == i and enemy.limit and run_enemy.number >= enemy.limit then
+        if run_enemy.enemy_idx == enemy_id and enemy.limit and run_enemy.number >= enemy.limit then
           goto continue
         end
       end
-      choices_available[#choices_available+1] = i
+      choices_available[#choices_available+1] = enemy_id
       ::continue::
     end
   end

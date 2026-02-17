@@ -136,10 +136,10 @@ local function spawn_telefragger(x, y, layer)
   return uid
 end
 
----@type EnemyInfo[]
-return {{
-  spawn = spawn_telefragger,
+---@type EnemyInfo
+return {
+  spawn = commonlib.spawn_default_fun(spawn_telefragger),
   icon_texture = icon_texture,
   name = "Telefragger",
   limit = 3,
-}}
+}

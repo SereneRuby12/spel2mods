@@ -230,9 +230,9 @@ set_callback(function ()
   end
 end, ON.PRE_LEVEL_DESTRUCTION)
 
----@type EnemyInfo[]
-return {{
-  spawn = spawn_icbm,
+---@type EnemyInfo
+return {
+  spawn = commonlib.spawn_default_fun(spawn_icbm),
   icon_texture = icon_texture,
   limit = 2,
-}}
+}

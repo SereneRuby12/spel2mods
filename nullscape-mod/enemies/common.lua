@@ -1,6 +1,8 @@
+local module = {}
+
 ---@param entity Entity
 ---@param any_layer boolean?
-local function select_target(entity, any_layer)
+function module.select_target(entity, any_layer)
   local players = get_entities_by(0, MASK.PLAYER, any_layer and LAYER.ANY or entity.layer)
   local selected = -1
   local dist = math.maxinteger
@@ -14,32 +16,35 @@ local function select_target(entity, any_layer)
   return selected
 end
 
-local function ease_out(x)
+---@param spawn_fun fun(x: number, y: number, layer: number): integer
+---@return fun(): integer
+function module.spawn_default_fun(spawn_fun)
+  return function ()
+    local off_x, off_y = (prng:random() * 6) - 3, (prng:random() * 1.5) + 3.5
+    return spawn_fun(state.level_gen.spawn_x + off_x, state.level_gen.spawn_y + 4, LAYER.FRONT)
+  end
+end
+
+function module.ease_out(x)
   return (-((x-1)*(x-1))) + 1
 end
 
-local function ease_out_to_zero(x)
+function module.ease_out_to_zero(x)
   return ((x-1)*(x-1))
 end
 
-local function ease_in(x)
+function module.ease_in(x)
   return x*x
 end
 
-local function ease_in_to_zero(x)
+function module.ease_in_to_zero(x)
   return (-(x*x)) + 1
 end
 
-local function maxmin(min, x, max)
+function module.maxmin(min, x, max)
   return math.max(min, math.min(max, x))
 end
 
-return {
-  select_target = select_target,
-  ease_out = ease_out,
-  ease_out_to_zero = ease_out_to_zero,
-  ease_in = ease_in,
-  ease_in_to_zero = ease_in_to_zero,
-  maxmin = maxmin,
-  SOUND_VOLUME = 0.35
-}
+module.SOUND_VOLUME = 0.35
+
+return module

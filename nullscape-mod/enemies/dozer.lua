@@ -129,11 +129,11 @@ local function spawn_dozer()
   dozer_in_level = true
 end
 
----@type EnemyInfo[]
-return {{
+---@type EnemyInfo
+return {
   spawn = spawn_dozer,
   icon_texture = icon_texture,
   name = "Dozer",
   limit = 1,
   hard_limit = 1,
-}}
+}
